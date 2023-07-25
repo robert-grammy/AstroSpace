@@ -1,6 +1,7 @@
 package ru.robert_grammy.astro_space.game;
 
 import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -9,20 +10,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class LineShape {
-
-    private final static Vector defaultBasisVector = new Vector(0,1);
-
     private final Set<Vector> points = new HashSet<>();
     private Vector xBasisVector = new Vector(1, 0);
-
-    private Vector center;
     private int degree;
     private Color fillColor;
     private Color lineColor;
     private float lineWeight;
 
-    public LineShape(Vector center, int degree, Color fillColor, Color lineColor, float lineWeight, Vector... points) {
-        this.center = center;
+    public LineShape(int degree, Color fillColor, Color lineColor, float lineWeight, Vector... points) {
         this.degree = degree;
         this.fillColor = fillColor;
         this.lineColor = lineColor;
@@ -30,10 +25,12 @@ public class LineShape {
         this.points.addAll(Arrays.asList(points));
     }
 
-    public Set<Vector> getRealPoints() {
-        Vector xBasisVector = this.xBasisVector.clone();
-        xBasisVector.rotate(degree);
-        return points.stream().map(point -> point.fromBasis(xBasisVector)).collect(Collectors.toSet());
+    public Set<Vector> getPoints() {
+        return points;
+    }
+
+    public Set<Vector> getRealPoints(Vector position) {
+        return points.stream().map(Vector::clone).map(point -> point.fromBasis(xBasisVector.clone().rotate(degree)).add(position)).collect(Collectors.toSet());
     }
 
     public void rotate(int degree) {
@@ -49,14 +46,6 @@ public class LineShape {
 
     public int getRotation() {
         return degree;
-    }
-
-    public Vector getCenter() {
-        return center;
-    }
-
-    public void moveTo(Vector center) {
-        this.center = center;
     }
 
     public void setFillColor(Color fillColor) {

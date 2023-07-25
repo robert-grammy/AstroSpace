@@ -24,7 +24,7 @@ public final class QMath {
         degree = degree >= 360 ? degree - 360 : degree;
         double radian = Math.toRadians(degree);
         if (!cosTable.containsKey(degree)) {
-            cosTable.put(degree, Math.sin(radian));
+            cosTable.put(degree, Math.cos(radian));
         }
         return cosTable.get(degree);
     }

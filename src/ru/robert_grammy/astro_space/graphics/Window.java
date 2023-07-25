@@ -11,10 +11,10 @@ import java.util.Arrays;
 
 public class Window extends JFrame {
 
-    private final static String TITLE = "Astro Space";
+    public final static String TITLE = "Astro Space";
 
     private final static int CLEAR_COLOR = 0xFF000000;
-    private final static int WIDTH = 640, HEIGHT = 360;
+    private final static int WIDTH = 1280, HEIGHT = 720;
     private final static int BUFFER_STRATEGY_COUNT = 3;
 
     private final Canvas canvas = new Canvas();
@@ -36,8 +36,7 @@ public class Window extends JFrame {
         Arrays.fill(pixels, CLEAR_COLOR);
     }
 
-    @Override
-    public Graphics2D getGraphics() {
+    public Graphics2D getGameGraphics() {
         return graphics;
     }
 

@@ -3,6 +3,7 @@ package ru.robert_grammy.astro_space.game;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
 import ru.robert_grammy.astro_space.graphics.Window;
+import ru.robert_grammy.astro_space.utils.TimeManager;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -11,14 +12,13 @@ import java.util.List;
 
 public class Game implements Runnable {
 
-    private final static float UPDATE_RATE = 60.0F;
-
     private final Window window = new Window();
 
     private final List<Renderable> renderables = new ArrayList<>();
     private final List<Updatable> updatables = new ArrayList<>();
 
     private Thread thread = new Thread(this, window.getName());
+    private TimeManager time = new TimeManager(60,60);
     private boolean running = false;
 
     public Game() {}
@@ -87,32 +87,45 @@ public class Game implements Runnable {
 
     public void render() {
         window.clear();
-        Graphics2D graphics = window.getGraphics();
+        Graphics2D graphics = window.getGameGraphics();
         renderables.stream().sorted(Comparator.comparingInt(Renderable::getZIndex)).forEach(renderable -> renderable.render(graphics));
         window.swapCanvasImage();
     }
 
-    @Override
     public void run() {
+        int fps = 0;
+        int ups = 0;
+        long count = 0;
         float delta = 0;
-        long last = System.nanoTime();
-        boolean render = false;
+        long lastTime = time.getCurrentTime();
         while (running) {
-            long now = System.nanoTime();
-            long elapsed = now - last;
-            delta += (elapsed / UPDATE_RATE);
-            while(delta > 1) {
+            long now = time.getCurrentTime();
+            long elapsedTime = now - lastTime;
+            lastTime = now;
+            count += elapsedTime;
+            boolean render = false;
+            delta += (elapsedTime / time.getUpdateInterval());
+            while (delta > 1) {
                 update();
+                ups++;
                 delta--;
-                render = true;
+                if (!render) render = true;
             }
             if (render) {
                 render();
+                fps++;
+            } else {
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(TimeManager.IDLE);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
+            }
+            if (count >= TimeManager.SECOND) {
+                window.setTitle(Window.TITLE + " || FPS: " + fps + " | UPS: " + ups);
+                ups = 0;
+                fps = 0;
+                count = 0;
             }
         }
     }
