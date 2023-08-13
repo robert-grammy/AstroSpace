@@ -49,9 +49,8 @@ public class Vector {
     }
 
     public Vector normalize() {
-        double x = this.x, y = this.y;
-        this.x = x/length();
-        this.y = y/length();
+        this.x /= length();
+        this.y /= length();
         return this;
     }
 

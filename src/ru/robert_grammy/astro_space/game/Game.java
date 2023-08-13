@@ -3,6 +3,7 @@ package ru.robert_grammy.astro_space.game;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
 import ru.robert_grammy.astro_space.graphics.Window;
+import ru.robert_grammy.astro_space.utils.GameLogger;
 import ru.robert_grammy.astro_space.utils.TimeManager;
 
 import java.awt.*;
@@ -13,12 +14,13 @@ import java.util.List;
 public class Game implements Runnable {
 
     private final Window window = new Window();
+    private final GameLogger logger = new GameLogger(this);;
 
     private final List<Renderable> renderables = new ArrayList<>();
     private final List<Updatable> updatables = new ArrayList<>();
 
     private Thread thread = new Thread(this, window.getName());
-    private TimeManager time = new TimeManager(60,60);
+    private final TimeManager time = new TimeManager(60,60);
     private boolean running = false;
 
     public Game() {}
@@ -93,8 +95,6 @@ public class Game implements Runnable {
     }
 
     public void run() {
-        int fps = 0;
-        int ups = 0;
         long count = 0;
         float delta = 0;
         long lastTime = time.getCurrentTime();
@@ -107,13 +107,13 @@ public class Game implements Runnable {
             delta += (elapsedTime / time.getUpdateInterval());
             while (delta > 1) {
                 update();
-                ups++;
+                logger.addUps();
                 delta--;
                 if (!render) render = true;
             }
             if (render) {
                 render();
-                fps++;
+                logger.addFps();
             } else {
                 try {
                     Thread.sleep(TimeManager.IDLE);
@@ -122,12 +122,23 @@ public class Game implements Runnable {
                 }
             }
             if (count >= TimeManager.SECOND) {
-                window.setTitle(Window.TITLE + " || FPS: " + fps + " | UPS: " + ups);
-                ups = 0;
-                fps = 0;
+                StringBuilder displayTitle = new StringBuilder(Window.TITLE);
+                if (logger.isDisplayFps()) {
+                    displayTitle.append(" || FPS: ").append(logger.getFps());
+                    logger.resetFps();
+                }
+                if (logger.isDisplayUps()) {
+                    displayTitle.append(" || UPS: ").append(logger.getUps());
+                    logger.resetUps();
+                }
+                window.setTitle(displayTitle.toString());
                 count = 0;
             }
         }
+    }
+
+    public void console(String text) {
+        logger.console(text);
     }
 
 }

@@ -1,41 +1,39 @@
 package ru.robert_grammy.astro_space.game;
 
 import ru.robert_grammy.astro_space.engine.Vector;
-import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LineShape {
-    private final Set<Vector> points = new HashSet<>();
+    private final List<Vector> points = new ArrayList<>();
     private Vector xBasisVector = new Vector(1, 0);
-    private int degree;
+    private double degree;
     private Color fillColor;
     private Color lineColor;
     private float lineWeight;
 
-    public LineShape(int degree, Color fillColor, Color lineColor, float lineWeight, Vector... points) {
+    public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, Vector... points) {
         this.degree = degree;
         this.fillColor = fillColor;
         this.lineColor = lineColor;
         this.lineWeight = lineWeight;
-        this.points.addAll(Arrays.asList(points));
+        this.points.addAll(Arrays.stream(points).map(point -> point.multiply(scale)).toList());
     }
 
-    public Set<Vector> getPoints() {
+    public List<Vector> getPoints() {
         return points;
     }
 
-    public Set<Vector> getRealPoints(Vector position) {
-        return points.stream().map(Vector::clone).map(point -> point.fromBasis(xBasisVector.clone().rotate(degree)).add(position)).collect(Collectors.toSet());
+    public List<Vector> getRealPoints(Vector position) {
+        return points.stream().map(Vector::clone).map(point -> point.fromBasis(xBasisVector.clone().rotate(getRotation())).add(position)).toList();
     }
 
-    public void rotate(int degree) {
+    public void rotate(double degree) {
         degree += this.degree;
-        setRotation(degree);
+        setRotation((int) Math.floor(degree));
     }
 
     public void setRotation(int degree) {
@@ -45,7 +43,7 @@ public class LineShape {
     }
 
     public int getRotation() {
-        return degree;
+        return (int) Math.floor(degree);
     }
 
     public void setFillColor(Color fillColor) {
@@ -71,4 +69,9 @@ public class LineShape {
     public float getLineWeight() {
         return lineWeight;
     }
+
+    public Vector getXBasisVector() {
+        return xBasisVector;
+    }
+
 }

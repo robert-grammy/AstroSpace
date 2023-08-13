@@ -19,8 +19,7 @@ public class Player implements Updatable, Renderable {
 
     public Player(Vector position) {
         this.position = position;
-        Vector[] points = new Vector[]{new Vector(0,2).multiply(30), new Vector(1,-1).multiply(30), new Vector(-1,-1).multiply(30)};
-        shape = new LineShape(180, Color.GRAY, Color.LIGHT_GRAY, 4, points);
+        shape = GameShape.PLAYER_DEFAULT.getShape();
     }
 
     public Player(float x,float y) {
@@ -29,7 +28,7 @@ public class Player implements Updatable, Renderable {
 
     @Override
     public void render(Graphics2D graphics) {
-        GeneralPath path = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+        GeneralPath path = new GeneralPath();
         final Vector[] firstPoint = {null};
         shape.getRealPoints(position).forEach(point -> {
             if (firstPoint[0] == null) {
@@ -62,19 +61,35 @@ public class Player implements Updatable, Renderable {
 
     @Override
     public void update(Game game) {
-        KeyBoard keyBoard = game.getWindow().getKeyBoard();
-        if (keyBoard.pressed(KeyEvent.VK_UP)) {
-            position.subtract(Vector.UP_VECTOR);
-        }
+        control(game.getWindow().getKeyBoard());
+        movement();
+    }
+
+    private void control(KeyBoard keyBoard) {
         if (keyBoard.pressed(KeyEvent.VK_RIGHT)) {
             shape.rotate(3);
-        }
-        if (keyBoard.pressed(KeyEvent.VK_DOWN)){
-            position.add(Vector.UP_VECTOR);
         }
         if (keyBoard.pressed(KeyEvent.VK_LEFT)) {
             shape.rotate(-3);
         }
+
+        if (keyBoard.pressed(KeyEvent.VK_DOWN)){
+            movement.multiply(.965);
+        }
+        if (keyBoard.pressed(KeyEvent.VK_UP)) {
+            movement.multiply(.965).add(getDirection().multiply(.15));
+        }
+
+        double length = movement.length();
+        if (length <= .135) movement = new Vector(0,0);
+    }
+
+    private void movement() {
+        position.add(movement);
+    }
+
+    private Vector getDirection() {
+        return shape.getXBasisVector().clone().rotate(90).rotate(shape.getRotation());
     }
 
 }
