@@ -1,4 +1,4 @@
-package ru.robert_grammy.astro_space.game;
+package ru.robert_grammy.astro_space.game.shape;
 
 import ru.robert_grammy.astro_space.engine.Vector;
 
@@ -6,6 +6,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class LineShape {
     private final List<Vector> points = new ArrayList<>();

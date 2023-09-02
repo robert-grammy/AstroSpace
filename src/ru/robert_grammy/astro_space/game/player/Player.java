@@ -1,9 +1,12 @@
-package ru.robert_grammy.astro_space.game;
+package ru.robert_grammy.astro_space.game.player;
 
 import ru.robert_grammy.astro_space.engine.KeyBoard;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
 import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.game.Game;
+import ru.robert_grammy.astro_space.game.shape.GameShape;
+import ru.robert_grammy.astro_space.game.shape.LineShape;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;

@@ -13,7 +13,7 @@ public class Window extends JFrame {
 
     public final static String TITLE = "Astro Space";
 
-    private final static int CLEAR_COLOR = 0xFF000000;
+    private final static int CLEAR_COLOR = 0xFF110022;
     private final static int WIDTH = 1280, HEIGHT = 720;
     private final static int BUFFER_STRATEGY_COUNT = 3;
 
