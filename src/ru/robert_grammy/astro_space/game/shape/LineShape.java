@@ -16,6 +16,14 @@ public class LineShape {
     private Color lineColor;
     private float lineWeight;
 
+    public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, List<Vector> points) {
+        this.degree = degree;
+        this.fillColor = fillColor;
+        this.lineColor = lineColor;
+        this.lineWeight = lineWeight;
+        this.points.addAll(points.stream().map(point -> point.multiply(scale)).toList());
+    }
+
     public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, Vector... points) {
         this.degree = degree;
         this.fillColor = fillColor;

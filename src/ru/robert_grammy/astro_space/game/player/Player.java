@@ -5,7 +5,7 @@ import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
 import ru.robert_grammy.astro_space.engine.Vector;
 import ru.robert_grammy.astro_space.game.Game;
-import ru.robert_grammy.astro_space.game.shape.GameShape;
+import ru.robert_grammy.astro_space.game.shape.PlayerShape;
 import ru.robert_grammy.astro_space.game.shape.LineShape;
 
 import java.awt.*;
@@ -15,14 +15,14 @@ import java.awt.geom.GeneralPath;
 public class Player implements Updatable, Renderable {
 
     private LineShape shape;
-    private int zIndex = 5;
+    private int zIndex = 100;
 
     private Vector position;
     private Vector movement = new Vector(0, 0);
 
     public Player(Vector position) {
         this.position = position;
-        shape = GameShape.PLAYER_DEFAULT.getShape();
+        shape = PlayerShape.PLAYER_DEFAULT.getShape();
     }
 
     public Player(float x,float y) {
@@ -32,15 +32,15 @@ public class Player implements Updatable, Renderable {
     @Override
     public void render(Graphics2D graphics) {
         GeneralPath path = new GeneralPath();
-        final Vector[] firstPoint = {null};
-        shape.getRealPoints(position).forEach(point -> {
-            if (firstPoint[0] == null) {
-                firstPoint[0] = point;
-                path.moveTo(firstPoint[0].getX(), firstPoint[0].getY());
+        Vector firstPoint = null;
+        for (Vector point : shape.getRealPoints(position)) {
+            if (firstPoint == null) {
+                firstPoint = point;
+                path.moveTo(firstPoint.getX(), firstPoint.getY());
             }
             path.lineTo(point.getX(), point.getY());
-        });
-        path.lineTo(firstPoint[0].getX(), firstPoint[0].getY());
+        }
+        path.lineTo(firstPoint.getX(), firstPoint.getY());
         path.closePath();
         Stroke stroke = graphics.getStroke();
         graphics.setColor(shape.getFillColor());
