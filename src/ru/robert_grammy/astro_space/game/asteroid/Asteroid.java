@@ -20,6 +20,7 @@ public class Asteroid implements Renderable, Updatable {
 
     private Vector position;
     private int health;
+    private boolean isDestroyed = false;
 
     public Asteroid(int size, boolean rightRotation, double rotationSpeed, Vector inertia, Vector position) {
         this.position = position;
@@ -75,4 +76,5 @@ public class Asteroid implements Renderable, Updatable {
         position.add(inertia);
         shape.rotate(rightRotation ? rotationSpeed : -rotationSpeed);
     }
+
 }

@@ -1,9 +1,6 @@
 package ru.robert_grammy.astro_space.game.player;
 
-import ru.robert_grammy.astro_space.engine.KeyBoard;
-import ru.robert_grammy.astro_space.engine.Renderable;
-import ru.robert_grammy.astro_space.engine.Updatable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.*;
 import ru.robert_grammy.astro_space.game.Game;
 import ru.robert_grammy.astro_space.game.shape.PlayerShape;
 import ru.robert_grammy.astro_space.game.shape.LineShape;
@@ -11,6 +8,8 @@ import ru.robert_grammy.astro_space.game.shape.LineShape;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.geom.GeneralPath;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Player implements Updatable, Renderable {
 
@@ -50,6 +49,40 @@ public class Player implements Updatable, Renderable {
         graphics.draw(path);
         graphics.setStroke(stroke);
         graphics.setColor(Color.BLACK);
+
+
+        List<Vector> points = shape.getRealPoints(position);
+        List<StraightLine> lines = new ArrayList<>();
+        for (int i = 0; i<points.size(); i++) {
+            Vector a;
+            Vector b;
+            if (i < points.size() - 1) {
+                a = points.get(i);
+                b = points.get(i + 1);
+            } else {
+                a = points.get(i);
+                b = points.get(0);
+            }
+            lines.add(new StraightLine(a,b));
+        }
+        for (int i = 0; i<lines.size(); i++) {
+            StraightLine a;
+            StraightLine b;
+            if (i < points.size() - 1) {
+                a = lines.get(i);
+                b = lines.get(i + 1);
+            } else {
+                a = lines.get(0);
+                b = lines.get(i);
+            }
+            a.draw(graphics, new Vector(0,0), new Vector(1280, 720), Color.YELLOW, 1);
+            Vector cross = a.getPointIntersectionLines(b);
+            Color c = graphics.getColor();
+            graphics.setColor(Color.RED);
+            graphics.fillOval((int) cross.getX() - 3, (int) cross.getY() - 3, 6, 6);
+            graphics.setColor(c);
+        }
+
     }
 
     @Override
@@ -80,7 +113,7 @@ public class Player implements Updatable, Renderable {
             movement.multiply(.965);
         }
         if (keyBoard.pressed(KeyEvent.VK_UP)) {
-            movement.multiply(.965).add(getDirection().multiply(.15));
+            movement.multiply(.975).add(getDirection().multiply(.15));
         }
 
         double length = movement.length();

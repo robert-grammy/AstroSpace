@@ -1,6 +1,7 @@
 package ru.robert_grammy.astro_space.game.shape;
 
 import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.utils.GameLogger;
 import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
@@ -17,11 +18,11 @@ public final class AsteroidShape {
 
     public static LineShape generate(int size) {
         List<Vector> points = new ArrayList<>();
-        int extraPoints = size / 15;
+        int extraPoints = (size / 15) + 1;
         size *= 5;
-        int offset = (int) (size * 0.75);
+        double offset = size * 0.75;
         for (int i = 0; i < 6 * extraPoints; i++) {
-            int multiply = rnd.nextInt(offset, size);
+            double multiply = rnd.nextDouble(offset, size);
             int coefficient = 7 * extraPoints;
             double radians = (Math.PI / 3) / extraPoints * i + (rnd.nextDouble(( -Math.PI / coefficient), Math.PI / coefficient));
             int degree = (int) (radians * 180 / Math.PI);

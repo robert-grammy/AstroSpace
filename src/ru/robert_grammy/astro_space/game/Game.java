@@ -26,7 +26,8 @@ public class Game implements Runnable {
     public Game() {}
 
     public void addRenderable(Renderable renderable) {
-        renderables.add(renderable);
+        if (!renderables.contains(renderable))
+            renderables.add(renderable);
     }
 
     public void removeRenderable(Renderable renderable) {
@@ -34,7 +35,8 @@ public class Game implements Runnable {
     }
 
     public void addUpdatable(Updatable updatable) {
-        updatables.add(updatable);
+        if (!updatables.contains(updatable))
+            updatables.add(updatable);
     }
 
     public void removeUpdatable(Updatable updatable) {

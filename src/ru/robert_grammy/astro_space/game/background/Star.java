@@ -23,12 +23,10 @@ public class Star implements Renderable, Updatable {
 
     @Override
     public void render(Graphics2D graphics) {
-        Color outline = new Color(0x796279 + ((int) alpha << 24), true);
-        Color fill = new Color(0x5D5A67 + ((int) alpha << 24), true);
-        graphics.setColor(outline);
-        graphics.drawOval((int) position.getX(), (int) position.getY(), size, size);
+        Color fill = new Color(0xAB9AB2 + ((int) alpha << 24), true);
         graphics.setColor(fill);
         graphics.fillOval((int) position.getX(), (int) position.getY(), size, size);
+        graphics.setStroke(new BasicStroke(size, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
     }
 
     @Override
@@ -49,7 +47,7 @@ public class Star implements Renderable, Updatable {
 
     private void randomize() {
         size = rnd.nextInt(5, 40);
-        alpha = rnd.nextInt(128, 225);
+        alpha = rnd.nextInt(80, 220);
         position = new Vector(rnd.nextInt(-10,1290), rnd.nextInt(-10,730));
         fadeSpeed = rnd.nextDouble(5);
     }
