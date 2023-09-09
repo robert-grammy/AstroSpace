@@ -10,13 +10,14 @@ import java.awt.event.KeyEvent;
 import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Player implements Updatable, Renderable {
 
     private LineShape shape;
     private int zIndex = 100;
 
-    private Vector position;
+    private final Vector position;
     private Vector movement = new Vector(0, 0);
 
     public Player(Vector position) {
@@ -50,39 +51,28 @@ public class Player implements Updatable, Renderable {
         graphics.setStroke(stroke);
         graphics.setColor(Color.BLACK);
 
-
+        //TODO Удалить, дебаг
         List<Vector> points = shape.getRealPoints(position);
         List<StraightLine> lines = new ArrayList<>();
         for (int i = 0; i<points.size(); i++) {
-            Vector a;
-            Vector b;
-            if (i < points.size() - 1) {
-                a = points.get(i);
-                b = points.get(i + 1);
-            } else {
-                a = points.get(i);
-                b = points.get(0);
-            }
+            Vector a = points.get(i);
+            Vector b = points.get(i + 1 == points.size() ? 0 : i + 1);
             lines.add(new StraightLine(a,b));
         }
         for (int i = 0; i<lines.size(); i++) {
-            StraightLine a;
-            StraightLine b;
-            if (i < points.size() - 1) {
-                a = lines.get(i);
-                b = lines.get(i + 1);
-            } else {
-                a = lines.get(0);
-                b = lines.get(i);
-            }
-            a.draw(graphics, new Vector(0,0), new Vector(1280, 720), Color.YELLOW, 1);
+            StraightLine a = lines.get(i);
+            StraightLine b = lines.get(i + 1 == lines.size() ? 0 : i + 1);
+            a.draw(graphics, position.clone().subtract(150,150), position.clone().add(150,150), Color.YELLOW, 1);
             Vector cross = a.getPointIntersectionLines(b);
             Color c = graphics.getColor();
             graphics.setColor(Color.RED);
             graphics.fillOval((int) cross.getX() - 3, (int) cross.getY() - 3, 6, 6);
             graphics.setColor(c);
         }
-
+        AtomicInteger offset = new AtomicInteger(1);
+        graphics.setColor(Color.WHITE);
+        graphics.setFont(graphics.getFont().deriveFont(20F));
+        lines.forEach(line -> graphics.drawString(line.toString(), 100, 100 + 20 * (offset.getAndIncrement())));
     }
 
     @Override

@@ -52,11 +52,13 @@ public class Window extends JFrame {
     private void windowInitialize() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         canvas.setPreferredSize(dimension);
+        canvas.setFocusable(false);
         getContentPane().add(canvas);
         pack();
         setResizable(false);
         setLocationRelativeTo(null);
         setVisible(true);
+        setFocusable(true);
         addKeyListener(keyBoard);
     }
 

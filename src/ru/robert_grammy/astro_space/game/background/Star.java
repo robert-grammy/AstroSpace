@@ -46,7 +46,7 @@ public class Star implements Renderable, Updatable {
     }
 
     private void randomize() {
-        size = rnd.nextInt(5, 40);
+        size = rnd.nextInt(3, 20);
         alpha = rnd.nextInt(80, 220);
         position = new Vector(rnd.nextInt(-10,1290), rnd.nextInt(-10,730));
         fadeSpeed = rnd.nextDouble(5);

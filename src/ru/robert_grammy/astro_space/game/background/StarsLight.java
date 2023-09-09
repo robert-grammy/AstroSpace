@@ -13,7 +13,7 @@ public class StarsLight implements Renderable, Updatable {
     private final List<Star> stars = new ArrayList<>();
 
     public StarsLight() {
-        for (int i = 0; i<100; i++) {
+        for (int i = 0; i<150; i++) {
             stars.add(new Star());
         }
     }
