@@ -4,6 +4,6 @@ import ru.robert_grammy.astro_space.game.Game;
 
 public interface Updatable {
 
-    void update(Game game);
+    void update();
 
 }

@@ -1,6 +1,6 @@
 package ru.robert_grammy.astro_space.graphics;
 
-import ru.robert_grammy.astro_space.engine.KeyBoard;
+import ru.robert_grammy.astro_space.engine.Keyboard;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +21,7 @@ public class Window extends JFrame {
     private final Dimension dimension = new Dimension(WIDTH, HEIGHT);
     private final BufferedImage canvasImage = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
     private final Graphics2D graphics = (Graphics2D) canvasImage.getGraphics();
-    private final KeyBoard keyBoard = new KeyBoard();
+    private final Keyboard keyboard = new Keyboard();
 
     private int[] pixels;
     private BufferStrategy bufferStrategy;
@@ -45,8 +45,8 @@ public class Window extends JFrame {
         bufferStrategy.show();
     }
 
-    public KeyBoard getKeyBoard() {
-        return keyBoard;
+    public Keyboard getKeyboard() {
+        return keyboard;
     }
 
     private void windowInitialize() {
@@ -59,7 +59,7 @@ public class Window extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
         setFocusable(true);
-        addKeyListener(keyBoard);
+        addKeyListener(keyboard);
     }
 
     private void graphicsInitialize() {

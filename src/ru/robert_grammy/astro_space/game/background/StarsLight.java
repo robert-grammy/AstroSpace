@@ -32,7 +32,7 @@ public class StarsLight implements Renderable, Updatable {
     }
 
     @Override
-    public void update(Game game) {
-        stars.forEach(star -> star.update(game));
+    public void update() {
+        stars.forEach(Star::update);
     }
 }

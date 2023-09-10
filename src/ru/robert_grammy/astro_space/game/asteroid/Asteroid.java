@@ -72,9 +72,10 @@ public class Asteroid implements Renderable, Updatable {
     }
 
     @Override
-    public void update(Game game) {
+    public void update() {
         position.add(inertia);
         shape.rotate(rightRotation ? rotationSpeed : -rotationSpeed);
+        //TODO Реализация столкновений с игроком
     }
 
 }

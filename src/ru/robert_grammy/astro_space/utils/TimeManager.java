@@ -21,7 +21,7 @@ public class TimeManager {
         return SECOND / renderRate;
     }
 
-    public long getCurrentTime() {
+    public static long getCurrentTime() {
         return System.nanoTime();
     }
 

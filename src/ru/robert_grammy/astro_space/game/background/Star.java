@@ -38,7 +38,7 @@ public class Star implements Renderable, Updatable {
     }
 
     @Override
-    public void update(Game game) {
+    public void update() {
         alpha -= fadeSpeed;
         if (alpha <= 0) {
             randomize();

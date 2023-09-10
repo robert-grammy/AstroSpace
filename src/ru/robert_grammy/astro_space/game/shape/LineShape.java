@@ -1,5 +1,6 @@
 package ru.robert_grammy.astro_space.game.shape;
 
+import ru.robert_grammy.astro_space.engine.StraightLine;
 import ru.robert_grammy.astro_space.engine.Vector;
 
 import java.awt.*;
@@ -38,6 +39,17 @@ public class LineShape {
 
     public List<Vector> getRealPoints(Vector position) {
         return points.stream().map(Vector::clone).map(point -> point.fromBasis(xBasisVector.clone().rotate(getRotation())).add(position)).toList();
+    }
+
+    public List<StraightLine> getShapeRealLines(Vector position) {
+        List<Vector> points = getRealPoints(position);
+        List<StraightLine> lines = new ArrayList<>();
+        for (int i = 0; i<points.size(); i++) {
+            Vector a = points.get(i);
+            Vector b = points.get(i + 1 == points.size() ? 0 : i + 1);
+            lines.add(new StraightLine(a,b));
+        }
+        return lines;
     }
 
     public void rotate(double degree) {

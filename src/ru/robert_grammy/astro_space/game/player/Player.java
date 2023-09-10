@@ -1,7 +1,7 @@
 package ru.robert_grammy.astro_space.game.player;
 
+import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.*;
-import ru.robert_grammy.astro_space.game.Game;
 import ru.robert_grammy.astro_space.game.shape.PlayerShape;
 import ru.robert_grammy.astro_space.game.shape.LineShape;
 
@@ -10,15 +10,17 @@ import java.awt.event.KeyEvent;
 import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Player implements Updatable, Renderable {
+
+    private static final int SHOOT_DEFAULT_TIME = 25;
 
     private LineShape shape;
     private int zIndex = 100;
 
     private final Vector position;
     private Vector movement = new Vector(0, 0);
+    private int shootTimer = 0;
 
     public Player(Vector position) {
         this.position = position;
@@ -48,31 +50,16 @@ public class Player implements Updatable, Renderable {
         graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         graphics.setColor(shape.getLineColor());
         graphics.draw(path);
+        Rectangle lineBound = new Rectangle((int) (position.getX() - 150), (int) (position.getY() - 150), 300, 300);
+        if (Main.game.getLogger().isDrawPlayerShapeLines()) {
+            shape.getShapeRealLines(position).forEach(line -> line.draw(graphics, lineBound, Color.YELLOW, 1));
+        }
+        if (Main.game.getLogger().isDrawLineBound()) {
+            graphics.setColor(Color.GREEN);
+            graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
+        }
         graphics.setStroke(stroke);
         graphics.setColor(Color.BLACK);
-
-        //TODO Удалить, дебаг
-        List<Vector> points = shape.getRealPoints(position);
-        List<StraightLine> lines = new ArrayList<>();
-        for (int i = 0; i<points.size(); i++) {
-            Vector a = points.get(i);
-            Vector b = points.get(i + 1 == points.size() ? 0 : i + 1);
-            lines.add(new StraightLine(a,b));
-        }
-        for (int i = 0; i<lines.size(); i++) {
-            StraightLine a = lines.get(i);
-            StraightLine b = lines.get(i + 1 == lines.size() ? 0 : i + 1);
-            a.draw(graphics, position.clone().subtract(150,150), position.clone().add(150,150), Color.YELLOW, 1);
-            Vector cross = a.getPointIntersectionLines(b);
-            Color c = graphics.getColor();
-            graphics.setColor(Color.RED);
-            graphics.fillOval((int) cross.getX() - 3, (int) cross.getY() - 3, 6, 6);
-            graphics.setColor(c);
-        }
-        AtomicInteger offset = new AtomicInteger(1);
-        graphics.setColor(Color.WHITE);
-        graphics.setFont(graphics.getFont().deriveFont(20F));
-        lines.forEach(line -> graphics.drawString(line.toString(), 100, 100 + 20 * (offset.getAndIncrement())));
     }
 
     @Override
@@ -86,28 +73,41 @@ public class Player implements Updatable, Renderable {
     }
 
     @Override
-    public void update(Game game) {
-        control(game.getWindow().getKeyBoard());
+    public void update() {
+        control(Main.game.getWindow().getKeyboard());
         movement();
     }
 
-    private void control(KeyBoard keyBoard) {
-        if (keyBoard.pressed(KeyEvent.VK_RIGHT)) {
+    private void control(Keyboard keyboard) {
+        if (keyboard.pressed(KeyEvent.VK_RIGHT)) {
             shape.rotate(3);
         }
-        if (keyBoard.pressed(KeyEvent.VK_LEFT)) {
+        if (keyboard.pressed(KeyEvent.VK_LEFT)) {
             shape.rotate(-3);
         }
 
-        if (keyBoard.pressed(KeyEvent.VK_DOWN)){
+        if (keyboard.pressed(KeyEvent.VK_DOWN)){
             movement.multiply(.965);
         }
-        if (keyBoard.pressed(KeyEvent.VK_UP)) {
+        if (keyboard.pressed(KeyEvent.VK_UP)) {
             movement.multiply(.975).add(getDirection().multiply(.15));
         }
 
         double length = movement.length();
         if (length <= .135) movement = new Vector(0,0);
+
+        if (keyboard.pressed(KeyEvent.VK_SPACE)) {
+            if (!keyboard.isMemorized(KeyEvent.VK_SPACE) && shootTimer <= 0) {
+                keyboard.memorizePress(KeyEvent.VK_SPACE);
+                shootTimer = SHOOT_DEFAULT_TIME;
+                Vector firstRealPoint = shape.getRealPoints(position).get(0);
+                Vector bulletMovement = new Vector(firstRealPoint.getX() - position.getX(), firstRealPoint.getY() - position.getY());
+                Bullet bullet = new Bullet(firstRealPoint.add(bulletMovement.normalize().multiply(5)), bulletMovement);
+                Main.game.register(bullet);
+            }
+        }
+
+        if (shootTimer > 0) shootTimer--;
     }
 
     private void movement() {

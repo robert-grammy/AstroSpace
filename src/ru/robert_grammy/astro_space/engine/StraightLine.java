@@ -1,19 +1,22 @@
 package ru.robert_grammy.astro_space.engine;
 
+import ru.robert_grammy.astro_space.Main;
+
 import java.awt.*;
-import java.util.Optional;
 
 public class StraightLine {
+
+    private static final double aroundZero = 0.00000000001;
     private final double a, b, c;
 
     public StraightLine(Vector a, Vector b) {
-        this(a.getY() - b.getY(), b.getX() - a.getX(), a.getX() * b.getY() - b.getX() * a.getY());
+        this((a.getY() - b.getY()), (b.getX() - a.getX()), (a.getX() * b.getY() - b.getX() * a.getY()));
     }
 
     public StraightLine(double a, double b, double c) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
+        this.a = Math.abs(a) <= aroundZero ? 0 : (Math.abs(Math.ceil(a) - a) <= aroundZero ? Math.ceil(a) : a);
+        this.b = Math.abs(b) <= aroundZero ? 0 : (Math.abs(Math.ceil(b) - b) <= aroundZero ? Math.ceil(b) : b);
+        this.c = Math.abs(c) <= aroundZero ? 0 : (Math.abs(Math.ceil(c) - c) <= aroundZero ? Math.ceil(c) : c);
     }
 
     public Vector getPointIntersectionLines(StraightLine line) {
@@ -55,34 +58,46 @@ public class StraightLine {
         return (a * vector.getX() + c) / -b;
     }
 
-    private Vector getBoundPoint(Vector vector) {
+    private Vector getBoundPoint(Vector primary, Vector alternate) {
         Vector result;
         if (isHorizontal() || isVertical()) {
-            result = isHorizontal() ? new Vector(vector.getX(), yFromX(vector)) : new Vector(xFromY(vector), vector.getY());
+            result = isHorizontal() ? new Vector(primary.getX(), yFromX(primary)) : new Vector(xFromY(primary), primary.getY());
         } else {
-            double k = -a / b;
-            if (Math.abs(k) > 1) {
-                result = new Vector(xFromY(vector), vector.getY());
+            double k = a / b;
+            boolean isStartPoint = primary.getX() < alternate.getX();
+            if (Math.abs(k) >= 1) {
+                result = new Vector(xFromY(primary), primary.getY());
+                if (k >= 0) {
+                    double offset = result.getX() - alternate.getX();
+                    if (!isStartPoint && offset < 0 || isStartPoint && offset > 0) result = new Vector(alternate.getX(), yFromX(alternate));
+                } else {
+                    double offset = result.getX() - primary.getX();
+                    if (isStartPoint && offset < 0 || !isStartPoint && offset > 0) result = new Vector(primary.getX(), yFromX(primary));
+                }
             } else {
-                result = new Vector(vector.getX(), yFromX(vector));
+                result = new Vector(primary.getX(), yFromX(primary));
+                if (k >= 0) {
+                    double offset = result.getY() - alternate.getY();
+                    if (!isStartPoint && offset < 0 || isStartPoint && offset > 0) result = new Vector(xFromY(alternate), alternate.getY());
+                } else {
+                    double offset = result.getY() - primary.getY();
+                    if (isStartPoint && offset < 0 || !isStartPoint && offset > 0) result = new Vector(xFromY(primary), primary.getY());
+                }
             }
         }
         return result;
     }
 
-    public void draw(Graphics2D graphics, Vector start, Vector end, Color color, float weight) {
-        Vector a = getBoundPoint(start);
-        Vector b = getBoundPoint(end);
+    public void draw(Graphics2D graphics, Rectangle bound, Color color, float weight) {
+        Vector start = new Vector(bound.getX(), bound.getY());
+        Vector end = start.clone().add(bound.getWidth(), bound.getHeight());
+        Vector startLine = getBoundPoint(start, end);
+        Vector endLine = getBoundPoint(end, start);
         Color currentColor = graphics.getColor();
         Stroke currentStroke = graphics.getStroke();
         graphics.setColor(color);
         graphics.setStroke(new BasicStroke(weight, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.drawLine((int) a.getX(), (int) a.getY(), (int) b.getX(), (int) b.getY());
-
-        //TODO Удалить, дебаг окресности
-        graphics.setColor(Color.GREEN);
-        graphics.drawRect((int) start.getX(), (int) start.getY(), (int) (end.getX()-start.getX()), (int) (end.getY()-start.getY()));
-
+        graphics.drawLine((int) startLine.getX(), (int) startLine.getY(), (int) endLine.getX(), (int) endLine.getY());
         graphics.setColor(currentColor);
         graphics.setStroke(currentStroke);
     }

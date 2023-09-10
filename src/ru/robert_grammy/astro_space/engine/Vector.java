@@ -49,13 +49,14 @@ public class Vector {
     }
 
     public Vector normalize() {
-        this.x /= length();
-        this.y /= length();
+        double length = length();
+        x = x / length;
+        y = y / length;
         return this;
     }
 
     public double length() {
-        return Math.sqrt(x*x + y*y);
+        return Math.sqrt(x * x + y * y);
     }
 
     public Vector rotate(int degree) {

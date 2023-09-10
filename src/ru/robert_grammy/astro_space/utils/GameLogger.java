@@ -13,8 +13,10 @@ public class GameLogger {
     private int ups = 0;
     private int fps = 0;
 
-    boolean displayFps = true;
-    boolean displayUps = true;
+    boolean displayFps = false;
+    boolean displayUps = false;
+    boolean drawLineBound = false;
+    boolean drawPlayerShapeLines = false;
 
     public GameLogger(Game game) {
         this.game = game;
@@ -63,6 +65,22 @@ public class GameLogger {
 
     public void console(String text) {
         logger.log(Level.INFO, text);
+    }
+
+    public void setDrawLineBound(boolean value) {
+        drawLineBound = value;
+    }
+
+    public boolean isDrawLineBound() {
+        return drawLineBound;
+    }
+
+    public void setDrawPlayerShapeLines(boolean value) {
+        drawPlayerShapeLines = value;
+    }
+
+    public boolean isDrawPlayerShapeLines() {
+        return drawPlayerShapeLines;
     }
 
 }
