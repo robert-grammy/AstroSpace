@@ -17,7 +17,7 @@ public class Particle implements Renderable, Updatable {
     private int sizeBound = 20;
     private double alphaOrigin = 80;
     private double alphaBound = 220;
-    private Rectangle bound = new Rectangle(-10, -10, Main.game.getWindow().getWidth() + 10, Main.game.getWindow().getHeight() + 10);
+    private Rectangle bound = new Rectangle(-10, -10, Main.getGame().getWindow().getWidth() + 10, Main.getGame().getWindow().getHeight() + 10);
     private double fadeSpeedOrigin = 0.025;
     private double fadeSpeedBound = 5;
     private int hexColor = 0xAB9AB2;
@@ -99,7 +99,7 @@ public class Particle implements Renderable, Updatable {
         if (Optional.ofNullable(generator).isPresent()) {
             generator.remove(this);
         } else {
-            Main.game.unregister(this);
+            Main.getGame().unregister(this);
         }
     }
 

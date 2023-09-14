@@ -12,6 +12,7 @@ import ru.robert_grammy.astro_space.game.shape.LineShape;
 import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
+import java.awt.font.TextLayout;
 import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.Optional;
@@ -21,16 +22,17 @@ public class Asteroid implements Renderable, Updatable {
 
     private static final Random rnd = new Random();
 
-    private final boolean rightRotation;
-    private final double rotationSpeed;
-    private final Vector inertia;
-    private final LineShape shape;
-    private final int zIndex;
-    private final int size;
+    private boolean rightRotation;
+    private double rotationSpeed;
+    private Vector inertia;
+    private LineShape shape;
+    private int zIndex;
+    private int size;
     private Vector position;
     private int health;
     private boolean isDestroyed = false;
     private int destroyTimer;
+    private boolean isResetImmune = true;
     private ParticleGenerator explosion;
 
     public Asteroid(int size, boolean rightRotation, double rotationSpeed, Vector inertia, Vector position) {
@@ -43,6 +45,10 @@ public class Asteroid implements Renderable, Updatable {
         this.zIndex = 80 - size;
         this.health = size/3;
         destroyTimer = size*2;
+    }
+
+    public Asteroid() {
+        this(10, true, 0.5, new Vector(1,0), new Vector(0,0));
     }
 
     @Override
@@ -71,6 +77,42 @@ public class Asteroid implements Renderable, Updatable {
             graphics.setStroke(stroke);
             graphics.setColor(Color.BLACK);
         }
+        Rectangle lineBound = new Rectangle((int) (position.getX() - 5*size), (int) (position.getY() - 5*size), 10*size, 10*size);
+        if (Main.getGame().getGameDebugger().isDrawAsteroidShapeLines()) {
+            shape.getShapeRealLines(position).forEach(line -> line.draw(graphics, lineBound, Color.YELLOW, 1));
+        }
+        if (Main.getGame().getGameDebugger().isDrawAsteroidLineBound()) {
+            graphics.setColor(Color.GREEN);
+            Stroke stroke = graphics.getStroke();
+            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
+            graphics.setStroke(stroke);
+        }
+        if (Main.getGame().getGameDebugger().isDrawAsteroidCircleBound()) {
+            Stroke stroke = graphics.getStroke();
+            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            graphics.setColor(Color.RED);
+            graphics.drawOval((int) (position.getX()-size*3), (int) (position.getY()-size*3), size*6, size*6);
+            graphics.setStroke(stroke);
+            graphics.setColor(Color.BLACK);
+        }
+        if (Main.getGame().getGameDebugger().isDrawAsteroidParams()) {
+            Font baseFont = graphics.getFont();
+            Font font = new Font("Comic Sans MS", Font.PLAIN, (int) (size*1.75));
+            graphics.setFont(font);
+            graphics.setColor(Color.BLUE);
+            TextLayout textLayout = new TextLayout(String.valueOf(size), font, graphics.getFontRenderContext());
+            double xTextOffset = textLayout.getBounds().getWidth()/2;
+            double yTextOffset = textLayout.getBounds().getHeight()/2;
+            graphics.drawString(String.valueOf(size), (int) (position.getX() - xTextOffset), (int) (position.getY() - yTextOffset - 2));
+            graphics.setColor(Color.PINK);
+            textLayout = new TextLayout(String.valueOf(health), font, graphics.getFontRenderContext());
+            xTextOffset = textLayout.getBounds().getWidth()/2;
+            yTextOffset = textLayout.getBounds().getHeight()/2;
+            graphics.drawString(String.valueOf(health), (int) (position.getX() - xTextOffset), (int) (position.getY() + yTextOffset + 2));
+            graphics.setColor(Color.BLACK);
+            graphics.setFont(baseFont);
+        }
     }
 
     public void damage() {
@@ -82,7 +124,7 @@ public class Asteroid implements Renderable, Updatable {
         isDestroyed = true;
         Rectangle explosionBound = new Rectangle((int) (position.getX() - 40), (int) (position.getY() - 40), 80, 80);
         explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0xAA6633);
-        Main.game.register(explosion);
+        Main.getGame().register(explosion);
         if (size > 8) {
             int asteroidCountBound = size/5;
             int asteroidCount = asteroidCountBound <= 2 ? 2 : rnd.nextInt(2, size/5);
@@ -95,7 +137,7 @@ public class Asteroid implements Renderable, Updatable {
                 int degree = (int) (Math.pow(-1, Math.round(1 + rnd.nextDouble())) * 45 + rnd.nextDouble(-150, 150));
                 Vector inertia = new Vector(this.inertia.getX() * QMath.cos(degree) - this.inertia.getY() * QMath.sin(degree), this.inertia.getX() * QMath.sin(degree) + this.inertia.getY() * QMath.cos(degree));
                 Asteroid asteroid = new Asteroid(size, rightRotation, rotationSpeed, inertia, position);
-                Main.game.register(asteroid);
+                Main.getGame().register(asteroid);
             }
         }
     }
@@ -124,7 +166,7 @@ public class Asteroid implements Renderable, Updatable {
     }
 
     private void playerCollision() {
-        Optional<Player> optionalPlayer = Optional.ofNullable(Main.game.getPlayer());
+        Optional<Player> optionalPlayer = Optional.ofNullable(Main.getGame().getPlayer());
         if (optionalPlayer.isPresent()) {
             Player player = optionalPlayer.get();
             List<Vector> asteroidPoints = shape.getRealPoints(position);
@@ -154,6 +196,15 @@ public class Asteroid implements Renderable, Updatable {
         if (health <= 0) {
             destroy();
         }
+        if (isResetImmune) {
+            if (position.getX() >= 0 || position.getX() <= Main.getGame().getWindow().getWidth() || position.getY() >= 0 || position.getY() <= Main.getGame().getWindow().getCanvasHeight()) {
+                isResetImmune = false;
+            }
+        } else {
+            if (position.getX() < -size * 10 - 10 || position.getX() > Main.getGame().getWindow().getCanvasWidth() + size * 10 + 10 || position.getY() < -size * 10 - 10 || position.getY() > Main.getGame().getWindow().getCanvasHeight() + size * 10 + 10) {
+                reset();
+            }
+        }
     }
 
     private void afterDie() {
@@ -161,7 +212,36 @@ public class Asteroid implements Renderable, Updatable {
         destroyTimer--;
         if (destroyTimer > 0) return;
         explosion.setRecurring(false);
-        Main.game.unregister(this);
+        Main.getGame().unregister(this);
+    }
+
+    public void reset() {
+        int asteroidsCount = (int) Main.getGame().getUpdatables().stream().filter(object -> object instanceof Asteroid).count();
+
+        if (asteroidsCount > 40) {
+            Main.getGame().unregister(this);
+            return;
+        }
+
+        double xOffset = rnd.nextDouble(-150, 150);
+        double yOffset = rnd.nextDouble(-150, 150);
+        xOffset = xOffset < 0 ? xOffset : Main.getGame().getWindow().getCanvasWidth() + xOffset;
+        yOffset = yOffset < 0 ? yOffset : Main.getGame().getWindow().getCanvasHeight() + yOffset;
+        int size = rnd.nextInt(7, (int) (47 - asteroidsCount/1.35));
+        double rotationSpeed = 1 + rnd.nextDouble(0.5);
+        boolean rightRotation = rnd.nextDouble() < 0.5;
+        Vector inertia = new Vector(rnd.nextInt(Main.getGame().getWindow().getCanvasWidth()) - xOffset, rnd.nextInt(Main.getGame().getWindow().getCanvasHeight()) - yOffset).normalize().multiply(rnd.nextDouble(0.05, (15.0/size)));
+        Vector position = new Vector(xOffset, yOffset);
+
+        this.size = size;
+        this.position = position;
+        this.rightRotation = rightRotation;
+        this.rotationSpeed = rotationSpeed;
+        this.inertia = inertia;
+        this.shape = AsteroidShape.generate(size);
+        this.zIndex = 80 - size;
+        this.health = size/3;
+        destroyTimer = size*2;
     }
 
     public LineShape getShape() {
@@ -170,5 +250,13 @@ public class Asteroid implements Renderable, Updatable {
 
     public Vector getPosition() {
         return position;
+    }
+
+    public boolean isNotDestroyed() {
+        return !isDestroyed;
+    }
+
+    public int getSize() {
+        return size;
     }
 }

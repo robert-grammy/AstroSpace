@@ -43,7 +43,7 @@ public class Bullet implements Renderable, Updatable {
     }
 
     public void destroy() {
-        Main.game.unregister(this);
+        Main.getGame().unregister(this);
     }
 
     @Override
@@ -60,12 +60,12 @@ public class Bullet implements Renderable, Updatable {
     public void update() {
         lastPosition = position.clone();
         position.add(movement);
-        if (position.getX() < 0 || position.getX() > Main.game.getWindow().getCanvasWidth() || position.getY() < 0 || position.getY() > Main.game.getWindow().getCanvasHeight()) destroy();
+        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getCanvasWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getCanvasHeight()) destroy();
         Vector futurePosition = position.clone().add(movement);
         if (Optional.ofNullable(futurePosition).isEmpty()) return;
         StraightLine bulletLine = new StraightLine(futurePosition, lastPosition);
-        Stream<Updatable> stream = Main.game.getUpdatables().stream();
-        stream.filter(updatable -> updatable instanceof Asteroid).map(updatable -> (Asteroid) updatable).forEach(asteroid -> {
+        Stream<Updatable> stream = Main.getGame().getUpdatables().stream();
+        stream.filter(updatable -> updatable instanceof Asteroid).map(updatable -> (Asteroid) updatable).filter(Asteroid::isNotDestroyed).forEach(asteroid -> {
             List<Vector> asteroidPoints = asteroid.getShape().getRealPoints(asteroid.getPosition());
             for (int i = 0; i<asteroidPoints.size(); i++) {
                 Vector asteroidA = asteroidPoints.get(i);
@@ -77,7 +77,10 @@ public class Bullet implements Renderable, Updatable {
                 boolean outPlayerXRange = cross.getX() < Math.min(futurePosition.getX(), lastPosition.getX()) || cross.getX() > Math.max(futurePosition.getX(), lastPosition.getX());
                 boolean outAsteroidYRange = cross.getY() < Math.min(asteroidA.getY(), asteroidB.getY()) || cross.getY() > Math.max(asteroidA.getY(), asteroidB.getY());
                 boolean outAsteroidXRange = cross.getX() < Math.min(asteroidA.getX(), asteroidB.getX()) || cross.getX() > Math.max(asteroidA.getX(), asteroidB.getX());
-                if (outPlayerYRange || outPlayerXRange || outAsteroidYRange || outAsteroidXRange) continue;
+                if (outPlayerYRange || outPlayerXRange || outAsteroidYRange || outAsteroidXRange) {
+                    Vector centerOffsetVector = position.clone().subtract(asteroid.getPosition());
+                    if (centerOffsetVector.length() > asteroid.getSize()*3) continue;
+                }
                 destroy();
                 asteroid.damage();
             }

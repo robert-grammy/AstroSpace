@@ -5,7 +5,7 @@ import ru.robert_grammy.astro_space.game.Game;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class GameLogger {
+public class GameDebugger {
 
     private Game game;
     private Logger logger;
@@ -15,10 +15,14 @@ public class GameLogger {
 
     boolean displayFps = false;
     boolean displayUps = false;
-    boolean drawLineBound = false;
+    boolean drawPlayerLineBound = false;
     boolean drawPlayerShapeLines = false;
+    boolean drawAsteroidCircleBound = false;
+    boolean drawAsteroidLineBound = false;
+    boolean drawAsteroidShapeLines = false;
+    boolean drawAsteroidParams = false;
 
-    public GameLogger(Game game) {
+    public GameDebugger(Game game) {
         this.game = game;
         logger = Logger.getLogger(Game.class.getName());
     }
@@ -67,12 +71,12 @@ public class GameLogger {
         logger.log(Level.INFO, text);
     }
 
-    public void setDrawLineBound(boolean value) {
-        drawLineBound = value;
+    public void setDrawPlayerLineBound(boolean value) {
+        drawPlayerLineBound = value;
     }
 
-    public boolean isDrawLineBound() {
-        return drawLineBound;
+    public boolean isDrawPlayerLineBound() {
+        return drawPlayerLineBound;
     }
 
     public void setDrawPlayerShapeLines(boolean value) {
@@ -83,4 +87,35 @@ public class GameLogger {
         return drawPlayerShapeLines;
     }
 
+    public void setDrawAsteroidCircleBound(boolean value) {
+        drawAsteroidCircleBound = value;
+    }
+
+    public boolean isDrawAsteroidCircleBound() {
+        return drawAsteroidCircleBound;
+    }
+
+    public void setDrawAsteroidLineBound(boolean value) {
+        drawAsteroidLineBound = value;
+    }
+
+    public boolean isDrawAsteroidLineBound() {
+        return drawAsteroidLineBound;
+    }
+
+    public void setDrawAsteroidShapeLines(boolean value) {
+        drawAsteroidShapeLines = value;
+    }
+
+    public boolean isDrawAsteroidShapeLines() {
+        return drawAsteroidShapeLines;
+    }
+
+    public void setDrawAsteroidParams(boolean value) {
+        drawAsteroidParams = value;
+    }
+
+    public boolean isDrawAsteroidParams() {
+        return drawAsteroidParams;
+    }
 }

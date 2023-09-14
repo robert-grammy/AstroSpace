@@ -51,7 +51,7 @@ public class ParticleGenerator implements Renderable, Updatable {
         particles.forEach(Particle::update);
         particles.removeAll(toRemove);
         toRemove.clear();
-        if (particles.size() == 0) Main.game.unregister(this);
+        if (particles.size() == 0) Main.getGame().unregister(this);
     }
 
     public void remove(Particle particle) {
