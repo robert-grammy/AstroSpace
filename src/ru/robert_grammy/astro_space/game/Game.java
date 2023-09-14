@@ -11,6 +11,7 @@ import ru.robert_grammy.astro_space.utils.TimeManager;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -66,6 +67,14 @@ public class Game implements Runnable {
         updatablesToRemove.clear();
         updatables.addAll(updatablesToAdd);
         updatablesToAdd.clear();
+    }
+
+    public List<Updatable> getUpdatables() {
+        return Collections.unmodifiableList(updatables);
+    }
+
+    public List<Renderable> getRenderables() {
+        return Collections.unmodifiableList(renderables);
     }
 
     public boolean register(Object object) {

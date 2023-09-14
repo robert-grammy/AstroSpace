@@ -63,7 +63,10 @@ public class Player implements Updatable, Renderable {
         }
         if (Main.game.getLogger().isDrawLineBound()) {
             graphics.setColor(Color.GREEN);
+            Stroke stroke = graphics.getStroke();
+            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
+            graphics.setStroke(stroke);
         }
     }
 
@@ -79,8 +82,10 @@ public class Player implements Updatable, Renderable {
 
     @Override
     public void update() {
-        control(Main.game.getWindow().getKeyboard());
-        movement();
+        if (!isDestroyed) {
+            control(Main.game.getWindow().getKeyboard());
+            movement();
+        }
         afterDie();
     }
 
@@ -132,6 +137,7 @@ public class Player implements Updatable, Renderable {
 
     private void movement() {
         position.add(movement);
+        if (position.getX() < 0 || position.getX() > Main.game.getWindow().getCanvasWidth() || position.getY() < 0 || position.getY() > Main.game.getWindow().getCanvasHeight()) destroy();
     }
 
     public Vector getDirection() {
@@ -140,6 +146,7 @@ public class Player implements Updatable, Renderable {
 
     public void destroy() {
         if (isDestroyed) return;
+        System.out.println(position);
         isDestroyed = true;
         Rectangle explosionBound = new Rectangle((int) (position.getX() - 40), (int) (position.getY() - 40), 80, 80);
         explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0xAA6633);

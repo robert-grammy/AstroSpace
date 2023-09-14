@@ -22,7 +22,7 @@ public class Main {
         ParticleGenerator light = new ParticleGenerator(300, 0);
         game.register(light);
 
-        Asteroid testAsteroid = new Asteroid(15, true, 1, new Vector(1,0), new Vector(200, 360));
+        Asteroid testAsteroid = new Asteroid(30, true, 1, new Vector(1,0), new Vector(200, 360));
         game.register(testAsteroid);
     }
 

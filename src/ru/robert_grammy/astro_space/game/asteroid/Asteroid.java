@@ -5,28 +5,36 @@ import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.StraightLine;
 import ru.robert_grammy.astro_space.engine.Updatable;
 import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.game.player.Player;
 import ru.robert_grammy.astro_space.game.shape.AsteroidShape;
 import ru.robert_grammy.astro_space.game.shape.LineShape;
+import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 public class Asteroid implements Renderable, Updatable {
+
+    private static final Random rnd = new Random();
 
     private final boolean rightRotation;
     private final double rotationSpeed;
     private final Vector inertia;
     private final LineShape shape;
     private final int zIndex;
-
+    private final int size;
     private Vector position;
     private int health;
     private boolean isDestroyed = false;
+    private int destroyTimer;
+    private ParticleGenerator explosion;
 
     public Asteroid(int size, boolean rightRotation, double rotationSpeed, Vector inertia, Vector position) {
+        this.size = size;
         this.position = position;
         this.rightRotation = rightRotation;
         this.rotationSpeed = rotationSpeed;
@@ -34,29 +42,35 @@ public class Asteroid implements Renderable, Updatable {
         this.shape = AsteroidShape.generate(size);
         this.zIndex = 80 - size;
         this.health = size/3;
+        destroyTimer = size*2;
     }
 
     @Override
     public void render(Graphics2D graphics) {
-        GeneralPath path = new GeneralPath();
-        Vector firstPoint = null;
-        for (Vector point : shape.getRealPoints(position)) {
-            if (firstPoint == null) {
-                firstPoint = point;
-                path.moveTo(firstPoint.getX(), firstPoint.getY());
+        if (!isDestroyed) {
+            GeneralPath path = new GeneralPath();
+            Vector firstPoint = null;
+            for (Vector point : shape.getRealPoints(position)) {
+                if (firstPoint == null) {
+                    firstPoint = point;
+                    path.moveTo(firstPoint.getX(), firstPoint.getY());
+                }
+                path.lineTo(point.getX(), point.getY());
             }
-            path.lineTo(point.getX(), point.getY());
+            path.lineTo(firstPoint.getX(), firstPoint.getY());
+            path.closePath();
+            Stroke stroke = graphics.getStroke();
+            int hexFillColor = shape.getFillColor().getRGB();
+            int colorBrighter = (int) (48 * (((size/3.0) - health)/(size/3)));
+            hexFillColor = hexFillColor + colorBrighter + (colorBrighter << 8) + (colorBrighter << 16) ;
+            graphics.setColor(new Color(hexFillColor));
+            graphics.fill(path);
+            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            graphics.setColor(shape.getLineColor());
+            graphics.draw(path);
+            graphics.setStroke(stroke);
+            graphics.setColor(Color.BLACK);
         }
-        path.lineTo(firstPoint.getX(), firstPoint.getY());
-        path.closePath();
-        Stroke stroke = graphics.getStroke();
-        graphics.setColor(shape.getFillColor());
-        graphics.fill(path);
-        graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.setColor(shape.getLineColor());
-        graphics.draw(path);
-        graphics.setStroke(stroke);
-        graphics.setColor(Color.BLACK);
     }
 
     public void damage() {
@@ -64,7 +78,26 @@ public class Asteroid implements Renderable, Updatable {
     }
 
     public void destroy() {
-
+        if (isDestroyed) return;
+        isDestroyed = true;
+        Rectangle explosionBound = new Rectangle((int) (position.getX() - 40), (int) (position.getY() - 40), 80, 80);
+        explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0xAA6633);
+        Main.game.register(explosion);
+        if (size > 8) {
+            int asteroidCountBound = size/5;
+            int asteroidCount = asteroidCountBound <= 2 ? 2 : rnd.nextInt(2, size/5);
+            for (int i = asteroidCount; i>0; i--) {
+                Vector position = new Vector(rnd.nextInt((int) this.position.getX(), (int) (this.position.getX() + size)), rnd.nextInt((int) this.position.getY(), (int) (this.position.getY() + size)));
+                int size = this.size / asteroidCount;
+                size = Math.max(size, 3);
+                double rotationSpeed = 1 + rnd.nextDouble(0.5);
+                boolean rightRotation = rnd.nextDouble() < 0.5;
+                int degree = (int) (Math.pow(-1, Math.round(1 + rnd.nextDouble())) * 45 + rnd.nextDouble(-150, 150));
+                Vector inertia = new Vector(this.inertia.getX() * QMath.cos(degree) - this.inertia.getY() * QMath.sin(degree), this.inertia.getX() * QMath.sin(degree) + this.inertia.getY() * QMath.cos(degree));
+                Asteroid asteroid = new Asteroid(size, rightRotation, rotationSpeed, inertia, position);
+                Main.game.register(asteroid);
+            }
+        }
     }
 
     @Override
@@ -77,9 +110,12 @@ public class Asteroid implements Renderable, Updatable {
 
     @Override
     public void update() {
-        movement();
-        playerCollision();
-        process();
+        if (!isDestroyed) {
+            movement();
+            playerCollision();
+            process();
+        }
+        afterDie();
     }
 
     private void movement() {
@@ -120,4 +156,19 @@ public class Asteroid implements Renderable, Updatable {
         }
     }
 
+    private void afterDie() {
+        if (!isDestroyed) return;
+        destroyTimer--;
+        if (destroyTimer > 0) return;
+        explosion.setRecurring(false);
+        Main.game.unregister(this);
+    }
+
+    public LineShape getShape() {
+        return shape;
+    }
+
+    public Vector getPosition() {
+        return position;
+    }
 }

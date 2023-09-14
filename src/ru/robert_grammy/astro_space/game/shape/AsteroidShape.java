@@ -11,7 +11,6 @@ import java.util.Random;
 public final class AsteroidShape {
 
     private final static Random rnd = new Random();
-    private final static Vector base = new Vector(1,0);
 
     private AsteroidShape() {}
 
