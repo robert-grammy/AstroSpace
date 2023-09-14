@@ -7,7 +7,6 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class LineShape {
     private final List<Vector> points = new ArrayList<>();

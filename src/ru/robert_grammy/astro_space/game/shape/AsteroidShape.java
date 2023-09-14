@@ -1,7 +1,6 @@
 package ru.robert_grammy.astro_space.game.shape;
 
 import ru.robert_grammy.astro_space.engine.Vector;
-import ru.robert_grammy.astro_space.utils.GameLogger;
 import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;

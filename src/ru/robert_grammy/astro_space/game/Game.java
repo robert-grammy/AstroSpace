@@ -3,6 +3,7 @@ package ru.robert_grammy.astro_space.game;
 import ru.robert_grammy.astro_space.engine.Keyboard;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
+import ru.robert_grammy.astro_space.game.player.Player;
 import ru.robert_grammy.astro_space.graphics.Window;
 import ru.robert_grammy.astro_space.utils.GameLogger;
 import ru.robert_grammy.astro_space.utils.TimeManager;
@@ -28,6 +29,8 @@ public class Game implements Runnable {
     private Thread thread = new Thread(this, window.getName());
     private final TimeManager time = new TimeManager(60,60);
     private boolean running = false;
+
+    private Player player;
 
     public Game() {}
 
@@ -67,6 +70,9 @@ public class Game implements Runnable {
 
     public boolean register(Object object) {
         boolean isRegistered = false;
+        if (object instanceof Player) {
+            player = (Player) object;
+        }
         if (object instanceof Renderable) {
             addRenderable((Renderable) object);
             isRegistered = true;
@@ -80,6 +86,9 @@ public class Game implements Runnable {
 
     public boolean unregister(Object object) {
         boolean isUnregistered = false;
+        if (object instanceof Player) {
+            player = null;
+        }
         if (object instanceof Renderable) {
             removeRenderable((Renderable) object);
             isUnregistered = true;
@@ -89,6 +98,10 @@ public class Game implements Runnable {
             isUnregistered = true;
         }
         return isUnregistered;
+    }
+
+    public Player getPlayer() {
+        return player;
     }
 
     public synchronized void play() {

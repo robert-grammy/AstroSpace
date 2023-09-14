@@ -1,7 +1,5 @@
 package ru.robert_grammy.astro_space.engine;
 
-import ru.robert_grammy.astro_space.Main;
-
 import java.awt.*;
 
 public class StraightLine {
