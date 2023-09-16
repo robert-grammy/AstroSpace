@@ -7,8 +7,10 @@ public class Main {
     private final static Game game = new Game();
 
     public static void main(String[] args) {
-        game.initialize();
-        game.play();
+        while (true) {
+            if (game.isRunning()) continue;
+            game.play();
+        }
     }
 
     public static Game getGame() {

@@ -9,7 +9,7 @@ public enum PlayerShape {
     PLAYER_DEFAULT(new LineShape(180, Color.BLACK, Color.WHITE, 2, 8, new Vector(0,2.5), new Vector(1.5,-1.5), new Vector(-1.5,-1.5))),
     PLAYER_PLANE(new LineShape(180, Color.GRAY, Color.LIGHT_GRAY, 2, 5, new Vector(-.5, 8), new Vector(.5, 8), new Vector(1.5, 7), new Vector(1.5, 1), new Vector(10.5, 1), new Vector(10.5, -2), new Vector(1.5, -1), new Vector(1.5, -6), new Vector(2.5, -6), new Vector(2.5, -8), new Vector(0, -7), new Vector(-2.5, -8), new Vector(-2.5, -6), new Vector(-1.5, -6), new Vector(-1.5, -1), new Vector(-10.5, -2), new Vector(-10.5, 1), new Vector(-1.5, 1), new Vector(-1.5, 7)));
 
-    private LineShape shape;
+    private final LineShape shape;
 
     PlayerShape(LineShape shape) {
         this.shape = shape;

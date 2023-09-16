@@ -6,9 +6,6 @@ import java.util.Objects;
 
 public class Vector {
 
-    public static final Vector UP_VECTOR = new Vector(0,1);
-    public static final Vector RIGHT_VECTOR = new Vector(1,0);
-
     private double x, y;
 
     public Vector(double x, double y) {

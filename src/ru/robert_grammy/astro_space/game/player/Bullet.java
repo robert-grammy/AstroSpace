@@ -15,8 +15,8 @@ import java.util.stream.Stream;
 public class Bullet implements Renderable, Updatable {
 
     private int zIndex = 10;
-    private Color fillColor = Color.BLACK;
-    private Color outlineColor = Color.WHITE;
+    private final Color fillColor = Color.BLACK;
+    private final Color outlineColor = Color.WHITE;
     private float lineWeight = 1;
     private int size = 7;
 
@@ -60,7 +60,7 @@ public class Bullet implements Renderable, Updatable {
     public void update() {
         lastPosition = position.clone();
         position.add(movement);
-        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getCanvasWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getCanvasHeight()) destroy();
+        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight()) destroy();
         Vector futurePosition = position.clone().add(movement);
         if (Optional.ofNullable(futurePosition).isEmpty()) return;
         StraightLine bulletLine = new StraightLine(futurePosition, lastPosition);
@@ -82,6 +82,8 @@ public class Bullet implements Renderable, Updatable {
                     if (centerOffsetVector.length() > asteroid.getSize()*3) continue;
                 }
                 destroy();
+                double score = (50.0 - asteroid.getSize())/4 + size/15.0 + asteroid.getInertia().length()/0.75;
+                Main.getGame().addScore((int) Math.floor(score));
                 asteroid.damage();
             }
         });

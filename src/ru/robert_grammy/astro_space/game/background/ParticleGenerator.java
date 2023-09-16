@@ -12,8 +12,6 @@ public class ParticleGenerator implements Renderable, Updatable {
 
     private int zIndex;
 
-    private boolean isRecurring = true;
-
     private final List<Particle> particles = new ArrayList<>();
     private final List<Particle> toRemove = new ArrayList<>();
 

@@ -10,7 +10,7 @@ import java.util.List;
 
 public class LineShape {
     private final List<Vector> points = new ArrayList<>();
-    private Vector xBasisVector = new Vector(1, 0);
+    private final Vector xBasisVector = new Vector(1, 0);
     private double degree;
     private Color fillColor;
     private Color lineColor;

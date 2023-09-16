@@ -13,14 +13,15 @@ public class GameDebugger {
     private int ups = 0;
     private int fps = 0;
 
-    boolean displayFps = false;
-    boolean displayUps = false;
-    boolean drawPlayerLineBound = false;
-    boolean drawPlayerShapeLines = false;
-    boolean drawAsteroidCircleBound = false;
-    boolean drawAsteroidLineBound = false;
-    boolean drawAsteroidShapeLines = false;
-    boolean drawAsteroidParams = false;
+    private boolean displayFps = false;
+    private boolean displayUps = false;
+    private boolean drawPlayerLineBound = false;
+    private boolean drawPlayerShapeLines = false;
+    private boolean drawAsteroidCircleBound = false;
+    private boolean drawAsteroidLineBound = false;
+    private boolean drawAsteroidShapeLines = false;
+    private boolean drawAsteroidParams = false;
+    private boolean drawDegubHelper = false;
 
     public GameDebugger(Game game) {
         this.game = game;
@@ -71,6 +72,10 @@ public class GameDebugger {
         logger.log(Level.INFO, text);
     }
 
+    public void console(Exception exception) {
+        logger.log(Level.SEVERE, "Error while game loop: ", exception);
+    }
+
     public void setDrawPlayerLineBound(boolean value) {
         drawPlayerLineBound = value;
     }
@@ -118,4 +123,13 @@ public class GameDebugger {
     public boolean isDrawAsteroidParams() {
         return drawAsteroidParams;
     }
+
+    public void setDrawDegubHelper(boolean value) {
+        drawDegubHelper = value;
+    }
+
+    public boolean isDrawDegubHelper() {
+        return drawDegubHelper;
+    }
+
 }
