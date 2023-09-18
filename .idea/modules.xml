@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/LineSpace.iml" filepath="$PROJECT_DIR$/LineSpace.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AstroSpace.iml" filepath="$PROJECT_DIR$/AstroSpace.iml" />
     </modules>
   </component>
 </project>
