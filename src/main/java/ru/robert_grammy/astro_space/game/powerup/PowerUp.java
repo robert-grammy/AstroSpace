@@ -67,7 +67,7 @@ public class PowerUp implements Renderable {
     public void kill() {
         Main.getGame().unregister(this);
         Rectangle puffBound = new Rectangle((int) (position.getX() - 25), (int) (position.getY() - 25), 50, 50);
-        ParticleGenerator puff = new ParticleGenerator(50, 90, puffBound, 15, 40, 30, 150, 2, 3, 0x117711);
+        ParticleGenerator puff = new ParticleGenerator(50, 30, puffBound, 15, 40, 30, 150, 2, 3, 0x117711);
         puff.setRecurring(false);
         Main.getGame().register(puff);
     }

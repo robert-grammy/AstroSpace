@@ -205,6 +205,9 @@ public class Asteroid implements Renderable, Updatable {
         if (health <= 0) {
             destroy();
         }
+        if (position.getX() < (-size*10 - 10)*2 || position.getX() > (Main.getGame().getWindow().getBufferWidth() + size*10 + 10)*2 || position.getY() < (-size*10 - 10)*2 || position.getY() > (Main.getGame().getWindow().getBufferHeight() + size*10 + 10)*2) {
+            reset();
+        }
         if (isResetImmune) {
             if (position.getX() >= 0 || position.getX() <= Main.getGame().getWindow().getBufferWidth() || position.getY() >= 0 || position.getY() <= Main.getGame().getWindow().getBufferHeight()) {
                 isResetImmune = false;

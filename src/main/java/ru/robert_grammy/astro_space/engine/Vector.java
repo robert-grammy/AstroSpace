@@ -39,10 +39,12 @@ public class Vector {
         return this;
     }
 
-    public double multiply(Vector vector) {
-        double x = this.x * vector.x;
-        double y = this.y * vector.y;
-        return x+y;
+    public double getScalar(Vector vector) {
+        return this.x * vector.x + this.y * vector.y;
+    }
+
+    public double getProduct(Vector vector) {
+        return this.x * vector.y - vector.x * this.y;
     }
 
     public Vector normalize() {

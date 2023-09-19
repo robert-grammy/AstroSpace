@@ -72,10 +72,12 @@ public class Player implements Updatable, Renderable {
             if (onPower(PowerUp.PowerType.DOUBLE_SCORE)) graphics.setColor(Color.GREEN);
             graphics.draw(path);
             if (onPower(PowerUp.PowerType.INVINCIBLE)) {
-                graphics.setColor(new Color(0x4400FFFF, true));
-                graphics.fillOval((int) position.getX() - 25, (int) position.getY() - 25, 50, 50);
-                graphics.setColor(Color.WHITE);
-                graphics.drawOval((int) position.getX() - 25, (int) position.getY() - 25, 50, 50);
+                if (powerUpDuration > 100 || powerUpDuration % 5 == 0) {
+                    graphics.setColor(new Color(0x4400FFFF, true));
+                    graphics.fillOval((int) position.getX() - 25, (int) position.getY() - 25, 50, 50);
+                    graphics.setColor(Color.WHITE);
+                    graphics.drawOval((int) position.getX() - 25, (int) position.getY() - 25, 50, 50);
+                }
             }
         }
         Rectangle lineBound = new Rectangle((int) (position.getX() - 100), (int) (position.getY() - 100), 200, 200);
@@ -89,6 +91,26 @@ public class Player implements Updatable, Renderable {
             graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
             graphics.setStroke(stroke);
         }
+
+        //TODO Удалить - проверка проекции
+        Main.getGame().getRenderables().stream().filter(renderable -> renderable instanceof PowerUp).map(powerUp -> (PowerUp) powerUp).forEach(powerUp -> {
+            List<Vector> realPoints = shape.getRealPoints(position);
+            for (int i = 0; i<realPoints.size(); i++) {
+                Vector a = realPoints.get(i);
+                Vector b = realPoints.get(i + 1 == realPoints.size() ? 0 : i + 1);
+                StraightLine line = new StraightLine(a, b);
+                Vector projection = line.getPointProjectionOnLine(powerUp.getPosition());
+                line.draw(graphics, new Rectangle(0,0,1600,900), Color.pink, 1);
+                graphics.setColor(Color.YELLOW);
+                graphics.drawOval((int) (powerUp.getPosition().getX()-2), (int) (powerUp.getPosition().getY()-2), 4, 4);
+                if (projection.getX() >= Math.min(a.getX(), b.getX()) && projection.getX() <= Math.max(a.getX(), b.getX()) && projection.getY() >= Math.min(a.getY(), b.getY()) && projection.getY() <= Math.max(a.getY(), b.getY())) {
+                    graphics.setColor(Color.GREEN);
+                } else {
+                    graphics.setColor(Color.RED);
+                }
+                graphics.drawOval((int) (projection.getX()-2), (int) (projection.getY()-2), 4, 4);
+            }
+        });
 
     }
 
@@ -162,7 +184,15 @@ public class Player implements Updatable, Renderable {
 
     private void movement() {
         position.add(movement);
-        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight()) destroy();
+        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight()) {
+            if (onPower(PowerUp.PowerType.INVINCIBLE)) {
+                Vector center = new Vector(Main.getGame().getWindow().getBufferWidth()/2.0, Main.getGame().getWindow().getBufferHeight()/2.0);
+                Vector impulse = center.subtract(position).normalize().multiply(3);
+                movement = impulse;
+            } else {
+                destroy();
+            }
+        }
     }
 
     public void handlePowerUpUp() {
@@ -170,45 +200,28 @@ public class Player implements Updatable, Renderable {
             List<Vector> realPoints = shape.getRealPoints(position);
             for (int i = 0; i<realPoints.size(); i++) {
                 Vector a = realPoints.get(i);
-                if (powerUp.getPosition().clone().subtract(a).length() < 20) {
-                    if (powerUp.getType() == PowerUp.PowerType.ADD_SCORE) {
-                        Main.getGame().addScore(rnd.nextInt(1,11) * 50);
-                        powerUp.kill();
-                        return;
-                    }
-                    powerUpType = powerUp.getType();
-                    powerUp.kill();
-                    if (powerUpType == PowerUp.PowerType.BIG_BOOM) {
-                        Main.getGame().getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
-                        return;
-                    }
-                    powerUpDuration = DEFAULT_POWER_UP_DURATION;
-                    return;
-                }
                 Vector b = realPoints.get(i + 1 == realPoints.size() ? 0 : i + 1);
-                StraightLine shapeLine = new StraightLine(a, b);
-                StraightLine normalLine = shapeLine.getNormalLineFromPoint(powerUp.getPosition());
-                Vector cross = shapeLine.getPointIntersectionLines(normalLine);
-                boolean outYRange = cross.getY() < Math.min(a.getY(), b.getY()) || cross.getY() > Math.max(a.getY(), b.getY());
-                boolean outXRange = cross.getX() < Math.min(a.getX(), b.getX()) || cross.getX() > Math.max(a.getX(), b.getX());
-                if (outYRange || outXRange) continue;
-                double length = powerUp.getPosition().clone().subtract(cross).length();
-                if (length > 20) continue;
-                if (powerUp.getType() == PowerUp.PowerType.ADD_SCORE) {
-                    Main.getGame().addScore(rnd.nextInt(1,11) * 50);
-                    powerUp.kill();
-                    return;
+                double distanceFromLine = StraightLine.distanceFromSegmentToPoint(a, b, powerUp.getPosition());
+                if (distanceFromLine <= 20) {
+                    powerUpUp(powerUp);
                 }
-                powerUpType = powerUp.getType();
-                powerUp.kill();
-                if (powerUpType == PowerUp.PowerType.BIG_BOOM) {
-                    Main.getGame().getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
-                    return;
-                }
-                powerUpDuration = DEFAULT_POWER_UP_DURATION;
-                return;
             }
         });
+    }
+
+    private void powerUpUp(PowerUp powerUp) {
+        if (powerUp.getType() == PowerUp.PowerType.ADD_SCORE) {
+            Main.getGame().addScore(rnd.nextInt(1,11) * 50);
+            powerUp.kill();
+            return;
+        }
+        powerUpType = powerUp.getType();
+        powerUp.kill();
+        if (powerUpType == PowerUp.PowerType.BIG_BOOM) {
+            Main.getGame().getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
+            return;
+        }
+        powerUpDuration = DEFAULT_POWER_UP_DURATION;
     }
 
     public Vector getDirection() {
