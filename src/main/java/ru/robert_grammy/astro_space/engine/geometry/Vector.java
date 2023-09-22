@@ -1,4 +1,4 @@
-package ru.robert_grammy.astro_space.engine;
+package ru.robert_grammy.astro_space.engine.geometry;
 
 import ru.robert_grammy.astro_space.utils.QMath;
 

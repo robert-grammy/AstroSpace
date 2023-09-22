@@ -3,7 +3,7 @@ package ru.robert_grammy.astro_space.game.background;
 import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
 import ru.robert_grammy.astro_space.game.powerup.PowerUp;
 
 import java.awt.*;

@@ -2,6 +2,10 @@ package ru.robert_grammy.astro_space.game.player;
 
 import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.*;
+import ru.robert_grammy.astro_space.engine.geometry.StraightLine;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
+import ru.robert_grammy.astro_space.engine.sound.GameSound;
+import ru.robert_grammy.astro_space.engine.sound.Sound;
 import ru.robert_grammy.astro_space.game.asteroid.Asteroid;
 import ru.robert_grammy.astro_space.game.background.Particle;
 import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
@@ -22,9 +26,8 @@ public class Player implements Updatable, Renderable {
 
     private static final int DEFAULT_SHOOT_TIME = 25;
     private static final int DEFAULT_DESTROY_TIME = 35;
-    private static final int DEFAULT_TIME_TO_POWER_UP_CALL = 1000;
-    private static final int BOUND_TIME_TO_POWER_UP_CALL = 2500;
-    private static final int DEFAULT_POWER_UP_DURATION = 750;
+    private static final int DEFAULT_TIME_TO_POWER_UP_CALL = 1500;
+    private static final int BOUND_TIME_TO_POWER_UP_CALL = 3500;
 
     private final LineShape shape;
     private int zIndex = 100;
@@ -40,9 +43,18 @@ public class Player implements Updatable, Renderable {
     private PowerUp.PowerType powerUpType;
     private int powerUpDuration = 0;
 
+    private final Sound flySound = GameSound.FLY.get();
+    private final Sound gasOnSound = GameSound.GAS_ON.get();
+    private final Sound gasOffSound = GameSound.GAS_OFF.get();
+    private final Sound shootSound = GameSound.SHOOT.get();
+    private final Sound boomSound = GameSound.BOOM.get();
+    private final Sound startGameSound = GameSound.START_GAME.get();
+    private final Sound gameOverSound = GameSound.GAME_OVER.get();
+
     public Player(Vector position) {
         this.position = position;
         shape = ShapeManager.PLAYER_DEFAULT.getShape();
+        startGameSound.play();
     }
 
     public Player(double x,double y) {
@@ -91,27 +103,6 @@ public class Player implements Updatable, Renderable {
             graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
             graphics.setStroke(stroke);
         }
-
-        //TODO Удалить - проверка проекции
-        Main.getGame().getRenderables().stream().filter(renderable -> renderable instanceof PowerUp).map(powerUp -> (PowerUp) powerUp).forEach(powerUp -> {
-            List<Vector> realPoints = shape.getRealPoints(position);
-            for (int i = 0; i<realPoints.size(); i++) {
-                Vector a = realPoints.get(i);
-                Vector b = realPoints.get(i + 1 == realPoints.size() ? 0 : i + 1);
-                StraightLine line = new StraightLine(a, b);
-                Vector projection = line.getPointProjectionOnLine(powerUp.getPosition());
-                line.draw(graphics, new Rectangle(0,0,1600,900), Color.pink, 1);
-                graphics.setColor(Color.YELLOW);
-                graphics.drawOval((int) (powerUp.getPosition().getX()-2), (int) (powerUp.getPosition().getY()-2), 4, 4);
-                if (projection.getX() >= Math.min(a.getX(), b.getX()) && projection.getX() <= Math.max(a.getX(), b.getX()) && projection.getY() >= Math.min(a.getY(), b.getY()) && projection.getY() <= Math.max(a.getY(), b.getY())) {
-                    graphics.setColor(Color.GREEN);
-                } else {
-                    graphics.setColor(Color.RED);
-                }
-                graphics.drawOval((int) (projection.getX()-2), (int) (projection.getY()-2), 4, 4);
-            }
-        });
-
     }
 
     @Override
@@ -127,7 +118,7 @@ public class Player implements Updatable, Renderable {
     @Override
     public void update() {
         if (!isDestroyed) {
-            control(Main.getGame().getWindow().getKeyboard());
+            control();
             movement();
             handlePowerUpUp();
             stockCall();
@@ -135,7 +126,9 @@ public class Player implements Updatable, Renderable {
         afterDie();
     }
 
-    private void control(Keyboard keyboard) {
+    private void control() {
+        Keyboard keyboard = Main.getGame().getWindow().getKeyboard();
+
         if (keyboard.pressed(KeyEvent.VK_RIGHT)) {
             shape.rotate(3);
         }
@@ -146,6 +139,7 @@ public class Player implements Updatable, Renderable {
         if (keyboard.pressed(KeyEvent.VK_DOWN)){
             movement.multiply(.965);
         }
+
         if (keyboard.pressed(KeyEvent.VK_UP)) {
             movement.multiply(.975).add(getDirection().multiply(.15));
             Vector particleCenter = position.clone().subtract(getDirection().normalize().multiply(12));
@@ -155,6 +149,19 @@ public class Player implements Updatable, Renderable {
             particle.setZIndex(30);
             particle.setRecurring(false);
             Main.getGame().register(particle);
+            if (!flySound.isPlaying() && !gasOnSound.isPlaying()) {
+                gasOnSound.play(false);
+            } else if (!flySound.isPlaying() && gasOnSound.isEnded()) {
+                flySound.loop();
+                flySound.play(false);
+                gasOnSound.stopAndReset();
+            }
+        } else {
+            if ((gasOnSound.isPlaying() || !flySound.isPlaying()) && gasOnSound.isEnded()) gasOnSound.stopAndReset();
+            if (flySound.isPlaying()) {
+                flySound.stop();
+                gasOffSound.play();
+            }
         }
 
         double length = movement.length();
@@ -163,6 +170,7 @@ public class Player implements Updatable, Renderable {
         if (keyboard.pressed(KeyEvent.VK_SPACE)) {
             if (!keyboard.isMemorized(KeyEvent.VK_SPACE) && shootTimer <= 0) {
                 keyboard.memorizePress(KeyEvent.VK_SPACE);
+                shootSound.play();
                 shootTimer = DEFAULT_SHOOT_TIME;
                 if (onPower(PowerUp.PowerType.FIRE_RATE)) shootTimer /= 5;
                 Vector firstRealPoint = shape.getRealPoints(position).get(0);
@@ -184,15 +192,24 @@ public class Player implements Updatable, Renderable {
 
     private void movement() {
         position.add(movement);
-        if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight()) {
+        boolean outOfX = position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth();
+        boolean outOfY = position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight();
+        if (outOfX || outOfY) {
             if (onPower(PowerUp.PowerType.INVINCIBLE)) {
-                Vector center = new Vector(Main.getGame().getWindow().getBufferWidth()/2.0, Main.getGame().getWindow().getBufferHeight()/2.0);
-                Vector impulse = center.subtract(position).normalize().multiply(3);
-                movement = impulse;
+                if (outOfX) {
+                    movement = new Vector(-movement.getX(), movement.getY());
+                } else {
+                    movement = new Vector(movement.getX(), -movement.getY());
+                }
             } else {
                 destroy();
             }
         }
+    }
+    private void stopSound() {
+        gasOnSound.stopAndReset();
+        flySound.stopAndReset();
+        gasOffSound.stopAndReset();
     }
 
     public void handlePowerUpUp() {
@@ -201,8 +218,9 @@ public class Player implements Updatable, Renderable {
             for (int i = 0; i<realPoints.size(); i++) {
                 Vector a = realPoints.get(i);
                 Vector b = realPoints.get(i + 1 == realPoints.size() ? 0 : i + 1);
-                double distanceFromLine = StraightLine.distanceFromSegmentToPoint(a, b, powerUp.getPosition());
-                if (distanceFromLine <= 20) {
+                StraightLine line = new StraightLine(a,b);
+                double distanceFromLine = line.distanceFromSegmentToPoint(powerUp.getPosition());
+                if (distanceFromLine <= 21) {
                     powerUpUp(powerUp);
                 }
             }
@@ -221,7 +239,7 @@ public class Player implements Updatable, Renderable {
             Main.getGame().getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
             return;
         }
-        powerUpDuration = DEFAULT_POWER_UP_DURATION;
+        powerUpDuration = powerUpType.getDuration();
     }
 
     public Vector getDirection() {
@@ -230,10 +248,13 @@ public class Player implements Updatable, Renderable {
 
     public void destroy() {
         if (isDestroyed) return;
+        stopSound();
         isDestroyed = true;
         Rectangle explosionBound = new Rectangle((int) (position.getX() - 40), (int) (position.getY() - 40), 40, 40);
         explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0x551111);
         Main.getGame().register(explosion);
+        gameOverSound.play();
+        boomSound.play();
     }
 
     public boolean isDestroyed() {
@@ -266,6 +287,7 @@ public class Player implements Updatable, Renderable {
         ParticleGenerator smoke = new ParticleGenerator(50, 100, smokeBound, 30, 60, 40, 250, 1, 4, 0xEEFFEE);
         Main.getGame().register(smoke);
         smoke.setRecurring(false);
+        startGameSound.play();
     }
 
     public void stockCall() {

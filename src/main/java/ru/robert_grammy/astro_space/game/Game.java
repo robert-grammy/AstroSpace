@@ -4,7 +4,8 @@ import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.Keyboard;
 import ru.robert_grammy.astro_space.engine.Renderable;
 import ru.robert_grammy.astro_space.engine.Updatable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
+import ru.robert_grammy.astro_space.engine.sound.GameSound;
 import ru.robert_grammy.astro_space.game.asteroid.Asteroid;
 import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.game.player.Player;
@@ -28,7 +29,7 @@ public class Game {
     private List<Renderable> renderablesDublicate;
     private final List<Updatable> updatables = new ArrayList<>();
     private List<Updatable> updatablesDublicate;
-    private final TimeManager time = new TimeManager(60,120);
+    private final TimeManager time = new TimeManager(60);
     private boolean running = false;
 
     private Player player;
@@ -209,7 +210,7 @@ public class Game {
             paused = !paused;
         }
 
-        if (player.isDestroyed()) {
+        if (player.isDestroyed() && !(GameSound.GAME_OVER.get().isPlaying() && !GameSound.GAME_OVER.get().isEnded())) {
             if (keyboard.pressed(KeyEvent.VK_R) && !keyboard.isMemorized(KeyEvent.VK_R)) {
                 keyboard.memorizePress(KeyEvent.VK_R);
                 reset();
@@ -268,7 +269,6 @@ public class Game {
         graphics.setColor(Color.WHITE);
         graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         graphics.drawRect(window.getBufferWidth()/2 - 360, getWindow().getBufferHeight()/2 - 120, 720, 150);
-        Font baseFont = graphics.getFont();
 
         Font font = new Font(Window.FONT_NAME, Font.PLAIN, 64);
         graphics.setFont(font);
@@ -277,6 +277,8 @@ public class Game {
         double xTextOffset = textLayout.getBounds().getWidth()/2;
         double yTextOffset = textLayout.getAscent()/2;
         graphics.drawString(crashedText, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset - 5));
+
+        if (GameSound.GAME_OVER.get().isPlaying() && !GameSound.GAME_OVER.get().isEnded()) return;
 
         font = new Font(Window.FONT_NAME, Font.PLAIN, 24);
         graphics.setFont(font);
@@ -292,9 +294,6 @@ public class Game {
         xTextOffset = textLayout.getBounds().getWidth()/2;
         yTextOffset = textLayout.getAscent()/2;
         graphics.drawString(scoreLabel.toString(), (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset + 5));
-
-        graphics.setFont(baseFont);
-        graphics.setColor(Color.BLACK);
     }
 
     public void drawPauseText(Graphics2D graphics) {

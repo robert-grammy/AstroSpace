@@ -2,9 +2,11 @@ package ru.robert_grammy.astro_space.game.player;
 
 import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.Renderable;
-import ru.robert_grammy.astro_space.engine.StraightLine;
+import ru.robert_grammy.astro_space.engine.geometry.StraightLine;
 import ru.robert_grammy.astro_space.engine.Updatable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
+import ru.robert_grammy.astro_space.engine.sound.GameSound;
+import ru.robert_grammy.astro_space.engine.sound.Sound;
 import ru.robert_grammy.astro_space.game.asteroid.Asteroid;
 import ru.robert_grammy.astro_space.game.powerup.PowerUp;
 
@@ -23,9 +25,11 @@ public class Bullet implements Renderable, Updatable {
     private final boolean doubleDamage;
 
     private Vector lastPosition;
-    private Vector position;
+    private final Vector position;
 
-    private Vector movement;
+    private final Vector movement;
+
+    private final Sound damageSound = GameSound.DAMAGE.get();
 
     public Bullet(Vector position, Vector movement) {
         this.position = position;
@@ -89,6 +93,7 @@ public class Bullet implements Renderable, Updatable {
                 destroy();
                 double score = (50.0 - asteroid.getSize())/4 + size/15.0 + asteroid.getInertia().length()/0.75;
                 Main.getGame().addScore((int) Math.floor(score));
+                damageSound.play();
                 asteroid.damage();
                 if (doubleDamage) asteroid.damage();
             }

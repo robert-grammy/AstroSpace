@@ -2,9 +2,11 @@ package ru.robert_grammy.astro_space.game.asteroid;
 
 import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.Renderable;
-import ru.robert_grammy.astro_space.engine.StraightLine;
+import ru.robert_grammy.astro_space.engine.geometry.StraightLine;
 import ru.robert_grammy.astro_space.engine.Updatable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
+import ru.robert_grammy.astro_space.engine.sound.GameSound;
+import ru.robert_grammy.astro_space.engine.sound.Sound;
 import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.game.player.Player;
 import ru.robert_grammy.astro_space.game.powerup.PowerUp;
@@ -36,6 +38,7 @@ public class Asteroid implements Renderable, Updatable {
     private int destroyTimer;
     private boolean isResetImmune = true;
     private ParticleGenerator explosion;
+    private final Sound boomSound = GameSound.BOOM.get();
 
     public Asteroid(int size, boolean rightRotation, double rotationSpeed, Vector inertia, Vector position) {
         this.size = size;
@@ -144,6 +147,7 @@ public class Asteroid implements Renderable, Updatable {
         Rectangle explosionBound = new Rectangle((int) (position.getX() - size*3), (int) (position.getY() - size*3), size*6, size*6);
         explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0x7C2B2B);
         Main.getGame().register(explosion);
+        boomSound.play();
     }
 
     @Override

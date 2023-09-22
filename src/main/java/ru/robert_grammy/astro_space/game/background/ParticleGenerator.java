@@ -7,6 +7,7 @@ import ru.robert_grammy.astro_space.engine.Updatable;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ParticleGenerator implements Renderable, Updatable {
 
@@ -32,7 +33,8 @@ public class ParticleGenerator implements Renderable, Updatable {
 
     @Override
     public void render(Graphics2D graphics) {
-        duplicate.forEach(particle -> particle.render(graphics));
+        if (Optional.ofNullable(duplicate).isPresent())
+            duplicate.forEach(particle -> particle.render(graphics));
     }
 
     @Override

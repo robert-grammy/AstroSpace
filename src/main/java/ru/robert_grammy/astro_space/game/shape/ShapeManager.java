@@ -1,6 +1,6 @@
 package ru.robert_grammy.astro_space.game.shape;
 
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
 import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.awt.*;
@@ -38,8 +38,7 @@ public enum ShapeManager {
             Vector point = new Vector(QMath.cos(degree), QMath.sin(degree)).multiply(multiply);
             points.add(point);
         }
-        LineShape shape = new LineShape(180, Color.BLACK, Color.WHITE, 2, 1, points);
-        return shape;
+        return new LineShape(180, Color.BLACK, Color.WHITE, 2, 1, points);
     }
 
 }

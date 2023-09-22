@@ -1,4 +1,4 @@
-package ru.robert_grammy.astro_space.engine;
+package ru.robert_grammy.astro_space.engine.geometry;
 
 import java.awt.*;
 
@@ -6,15 +6,18 @@ public class StraightLine {
 
     private static final double aroundZero = 0.00000000001;
     private final double a, b, c;
+    private final Vector pointA, pointB;
 
-    public StraightLine(Vector a, Vector b) {
-        this((a.getY() - b.getY()), (b.getX() - a.getX()), (a.getX() * b.getY() - b.getX() * a.getY()));
+    public StraightLine(Vector pointA, Vector pointB) {
+        this((pointA.getY() - pointB.getY()), (pointB.getX() - pointA.getX()), (pointA.getX() * pointB.getY() - pointB.getX() * pointA.getY()), pointA, pointB);
     }
 
-    public StraightLine(double a, double b, double c) {
+    private StraightLine(double a, double b, double c, Vector pointA, Vector pointB) {
         this.a = Math.abs(a) <= aroundZero ? 0 : (Math.abs(Math.ceil(a) - a) <= aroundZero ? Math.ceil(a) : a);
         this.b = Math.abs(b) <= aroundZero ? 0 : (Math.abs(Math.ceil(b) - b) <= aroundZero ? Math.ceil(b) : b);
         this.c = Math.abs(c) <= aroundZero ? 0 : (Math.abs(Math.ceil(c) - c) <= aroundZero ? Math.ceil(c) : c);
+        this.pointA = pointA;
+        this.pointB = pointB;
     }
 
     public double distanceToPoint(Vector point) {
@@ -70,19 +73,18 @@ public class StraightLine {
         return (a * point.getX() + c) / -b;
     }
 
+    public Vector getGuideVector() {
+        return new Vector(-b, a).normalize();
+    }
+
+    public Vector getNormalVector() {
+        return new Vector(-a, -b).normalize();
+    }
+
     public Vector getPointProjectionOnLine(Vector point) {
-        Vector result;
-        if (isHorizontal() || isVertical()) {
-            result = isHorizontal() ? new Vector(point.getX(), yFromX(point)) : new Vector(xFromY(point), point.getY());
-        } else {
-            double k = a / b;
-            if (Math.abs(k) >= 1) {
-                result = new Vector(xFromY(point), point.getY());
-            } else {
-                result = new Vector(point.getX(), yFromX(point));
-            }
-        }
-        return result;
+        Vector extra = getNormalVector().add(point);
+        StraightLine normalLine = new StraightLine(point, extra);
+        return getPointIntersectionLines(normalLine);
     }
 
     private Vector getBoundPoint(Vector primary, Vector alternate) {
@@ -138,35 +140,28 @@ public class StraightLine {
                 '}';
     }
 
-    /**
-     * The calculating distance from point H to line AB at the coordinates.
-     * @param a - the point A of AB.
-     * @param b - the point B of AB.
-     * @param h - the point H.
-     * @return the distance calculated line as vector product of AB*AH divided by vector AB
-     */
-    public static double distanceFromSegmentToPoint(Vector a, Vector b, Vector h) {
-        Vector ab = new Vector((b.getX() - a.getX()), (b.getY() - a.getY()));
-        Vector ah = new Vector((h.getX() - a.getX()), (h.getY() - a.getY()));
+    public double distanceFromSegmentToPoint(Vector point) {
+        Vector ab = new Vector((pointB.getX() - pointA.getX()), (pointB.getY() - pointA.getY()));
+        Vector ah = new Vector((point.getX() - pointA.getX()), (point.getY() - pointA.getY()));
         double product = ab.getProduct(ah);
-        double leftX = Math.min(a.getX(), b.getX());
-        double rightX = Math.max(a.getX(), b.getX());
-        double upY = Math.min(a.getY(), b.getY());
-        double downY = Math.max(a.getY(), b.getY());
-        StraightLine line = new StraightLine(a, b);
-        Vector projection = line.getPointProjectionOnLine(h);
-        if (product == 0 || (projection.getX() < leftX || projection.getX() > rightX) && (projection.getY() < upY || projection.getY() > downY)) {
-            Vector bh = new Vector((h.getX() - b.getX()), (h.getY() - b.getY()));
+        double leftX = Math.min(pointA.getX(), pointB.getX());
+        double rightX = Math.max(pointA.getX(), pointB.getX());
+        double upY = Math.min(pointA.getY(), pointB.getY());
+        double downY = Math.max(pointA.getY(), pointB.getY());
+        Vector projection = getPointProjectionOnLine(point);
+        if (product == 0 || (projection.getX() < leftX || projection.getX() > rightX) || (projection.getY() < upY || projection.getY() > downY)) {
+            Vector bh = new Vector((point.getX() - pointB.getX()), (point.getY() - pointB.getY()));
             return Math.min(ah.length(), bh.length());
         } else {
             return Math.abs(product) / ab.length();
         }
     }
 
-    public static double distanceFromLineToPoint(Vector a, Vector b, Vector h) {
-        Vector ab = new Vector((b.getX() - a.getX()), (b.getY() - a.getY()));
-        Vector ah = new Vector((h.getX() - a.getX()), (h.getY() - a.getY()));
-        return Math.abs(ab.getProduct(ah)) / ab.length();
+    public double distanceFromLineToPoint(Vector point) {
+        Vector ab = new Vector((pointB.getX() - pointA.getX()), (pointB.getY() - pointA.getY()));
+        Vector ah = new Vector((point.getX() - pointA.getX()), (point.getY() - pointA.getY()));
+        double product = ab.getProduct(ah);
+        return Math.abs(product) / ab.length();
     }
 
 }

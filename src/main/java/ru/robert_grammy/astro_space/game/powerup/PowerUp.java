@@ -2,7 +2,8 @@ package ru.robert_grammy.astro_space.game.powerup;
 
 import ru.robert_grammy.astro_space.Main;
 import ru.robert_grammy.astro_space.engine.Renderable;
-import ru.robert_grammy.astro_space.engine.Vector;
+import ru.robert_grammy.astro_space.engine.geometry.Vector;
+import ru.robert_grammy.astro_space.engine.sound.GameSound;
 import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.graphics.Window;
 
@@ -24,8 +25,12 @@ public class PowerUp implements Renderable {
     private double alpha = 0.0;
 
     public PowerUp() {
+        this(PowerType.getRandom());
+    }
+
+    public PowerUp(PowerType type) {
         position = new Vector(rnd.nextInt(25, Main.getGame().getWindow().getBufferWidth() - 25), rnd.nextInt(25, Main.getGame().getWindow().getBufferHeight() - 25));
-        type = PowerType.getRandom();
+        this.type = type;
     }
 
     public PowerType getType() {
@@ -70,17 +75,18 @@ public class PowerUp implements Renderable {
         ParticleGenerator puff = new ParticleGenerator(50, 30, puffBound, 15, 40, 30, 150, 2, 3, 0x117711);
         puff.setRecurring(false);
         Main.getGame().register(puff);
+        GameSound.PUFF.get().play();
     }
 
     public enum PowerType {
 
-        DOUBLE_DAMAGE(25, 0x880000, "D"),
-        FIRE_RATE(25, 0x888800, "R"),
-        BIG_BOOM(75, 0x884422, "B"),
-        DOUBLE_SCORE(100, 0x008800, "S"),
-        INVINCIBLE(10, 0x440088, "I"),
-        ADD_SCORE(250, 0x008844, "+"),
-        FREEZER(75, 0x008888, "F");
+        DOUBLE_DAMAGE(50, 0x880000, "D", 1000),
+        FIRE_RATE(25, 0x888800, "R", 850),
+        BIG_BOOM(100, 0x884422, "B", 0),
+        DOUBLE_SCORE(100, 0x008800, "S", 1500),
+        INVINCIBLE(10, 0x440088, "I", 750),
+        ADD_SCORE(300, 0x008844, "+", 0),
+        FREEZER(75, 0x008888, "F", 1200);
 
         private static final int totalWeight;
         static {
@@ -90,11 +96,13 @@ public class PowerUp implements Renderable {
         private final int weight;
         private final int rgb;
         private final String symbol;
+        private final int duration;
 
-        PowerType(int weight, int rgb, String symbol) {
+        PowerType(int weight, int rgb, String symbol, int duration) {
             this.weight = weight;
             this.rgb = rgb;
             this.symbol = symbol;
+            this.duration = duration;
         }
 
         public int getWeight() {
@@ -107,6 +115,10 @@ public class PowerUp implements Renderable {
 
         public String getSymbol() {
             return symbol;
+        }
+
+        public int getDuration() {
+            return duration;
         }
 
         public static PowerType getRandom() {
