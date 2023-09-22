@@ -276,12 +276,16 @@ public class Game {
         TextLayout textLayout = new TextLayout(crashedText, font, graphics.getFontRenderContext());
         double xTextOffset = textLayout.getBounds().getWidth()/2;
         double yTextOffset = textLayout.getAscent()/2;
-        graphics.drawString(crashedText, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset - 5));
+        double progress = GameSound.GAME_OVER.get().getClipProgress();
+        int hexColor = 0xFFFFFF + ((int) (255 * progress) << 24);
+        graphics.setColor(new Color(hexColor, true));
+        graphics.drawString(crashedText, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - (yTextOffset - 5) * progress));
 
         if (GameSound.GAME_OVER.get().isPlaying() && !GameSound.GAME_OVER.get().isEnded()) return;
 
         font = new Font(Window.FONT_NAME, Font.PLAIN, 24);
         graphics.setFont(font);
+        graphics.setColor(Color.WHITE);
         StringBuilder scoreLabel = new StringBuilder();
         if (score > bestScore) {
             scoreLabel.append("New record! ");

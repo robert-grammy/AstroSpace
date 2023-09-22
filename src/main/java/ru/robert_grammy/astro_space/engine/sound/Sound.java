@@ -62,6 +62,12 @@ public class Sound implements AutoCloseable {
         return clip.getFrameLength();
     }
 
+    public double getClipProgress() {
+        double length = clip.getFrameLength();
+        double position = clip.getFramePosition();
+        return position / length;
+    }
+
     public boolean isEnded() {
         return getClipPosition() == getClipLenght();
     }

@@ -5,6 +5,7 @@ import ru.robert_grammy.astro_space.Main;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -15,7 +16,7 @@ public enum GameSound {
     GAME_OVER(1F),
     START_GAME(1F),
     GAS_ON(0.9F),
-    FLY(0.8F),
+    FLY(0.85F),
     GAS_OFF(0.9F),
     SHOOT(0.9F),
     PUFF(1F);
@@ -37,7 +38,8 @@ public enum GameSound {
     }
 
     public AudioInputStream getStream() throws UnsupportedAudioFileException, IOException {
-        return AudioSystem.getAudioInputStream(Objects.requireNonNull(Main.class.getClassLoader().getResourceAsStream(path)));
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(Objects.requireNonNull(Main.class.getClassLoader().getResourceAsStream(path)));
+        return AudioSystem.getAudioInputStream(bufferedInputStream);
     }
 
     public Sound get() {
