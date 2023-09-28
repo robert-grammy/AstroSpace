@@ -1,6 +1,7 @@
 package ru.robert_grammy.astro_space.engine.sound;
 
 import ru.robert_grammy.astro_space.Main;
+import ru.robert_grammy.astro_space.utils.GameDebugger;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -19,22 +20,19 @@ public enum GameSound {
     FLY(0.85F),
     GAS_OFF(0.9F),
     SHOOT(0.9F),
-    PUFF(1F);
+    PUFF(1F),
+    BACKGROUND(0.85F);
 
 
     private static final String WAV_EXTENSION = ".wav";
     private static final String DIR = "assets/sound/";
 
     private final String path = DIR + name().toLowerCase() + WAV_EXTENSION;
-    private Sound sound;
+    private final Sound sound;
 
     GameSound(float baseVolume) {
-        try {
-            sound = new Sound(getStream());
-            sound.setVolume(baseVolume);
-        } catch (UnsupportedAudioFileException | IOException e) {
-            Main.getGame().getGameDebugger().console(e);
-        }
+        sound = getNewInstance();
+        sound.setVolume(baseVolume);
     }
 
     public AudioInputStream getStream() throws UnsupportedAudioFileException, IOException {
@@ -51,9 +49,24 @@ public enum GameSound {
         try {
             sound = new Sound(getStream());
         }  catch (UnsupportedAudioFileException | IOException e) {
-            Main.getGame().getGameDebugger().console(e);
+            GameDebugger.console(e);
         }
         return Objects.requireNonNull(sound);
+    }
+
+    public static Thread playAfter(Sound current, Sound next, int loop, boolean breakOld, long waitTime) {
+        return new Thread(() -> {
+            try {
+                while (!Thread.currentThread().isInterrupted() && !current.isEnded()) {
+                    Thread.onSpinWait();
+                }
+                Thread.sleep(waitTime);
+                next.loop(loop);
+                next.play(breakOld);
+            } catch (InterruptedException e) {
+                GameDebugger.console(e);
+            }
+        });
     }
 
 }

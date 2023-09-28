@@ -1,10 +1,11 @@
 package ru.robert_grammy.astro_space.engine.geometry;
 
 import java.awt.*;
+import java.util.Objects;
 
 public class StraightLine {
 
-    private static final double aroundZero = 0.00000000001;
+    private static final double AROUND_ZERO = 0.00000000001;
     private final double a, b, c;
     private final Vector pointA, pointB;
 
@@ -13,9 +14,9 @@ public class StraightLine {
     }
 
     private StraightLine(double a, double b, double c, Vector pointA, Vector pointB) {
-        this.a = Math.abs(a) <= aroundZero ? 0 : (Math.abs(Math.ceil(a) - a) <= aroundZero ? Math.ceil(a) : a);
-        this.b = Math.abs(b) <= aroundZero ? 0 : (Math.abs(Math.ceil(b) - b) <= aroundZero ? Math.ceil(b) : b);
-        this.c = Math.abs(c) <= aroundZero ? 0 : (Math.abs(Math.ceil(c) - c) <= aroundZero ? Math.ceil(c) : c);
+        this.a = Math.abs(a) <= AROUND_ZERO ? 0 : (Math.abs(Math.ceil(a) - a) <= AROUND_ZERO ? Math.ceil(a) : a);
+        this.b = Math.abs(b) <= AROUND_ZERO ? 0 : (Math.abs(Math.ceil(b) - b) <= AROUND_ZERO ? Math.ceil(b) : b);
+        this.c = Math.abs(c) <= AROUND_ZERO ? 0 : (Math.abs(Math.ceil(c) - c) <= AROUND_ZERO ? Math.ceil(c) : c);
         this.pointA = pointA;
         this.pointB = pointB;
     }
@@ -27,8 +28,7 @@ public class StraightLine {
     }
 
     public StraightLine getNormalLineFromPoint(Vector point) {
-        Vector zero = new Vector(1,1);
-        Vector pointOnLine = new Vector(xFromY(zero), yFromX(zero));
+        Vector pointOnLine = new Vector(xFromY(Vector.getZero()), yFromX(Vector.getZero()));
         Vector normal = new Vector(-pointOnLine.getY(), pointOnLine.getX());
         Vector extra = point.clone().add(normal);
         return new StraightLine(point, extra);
@@ -122,22 +122,9 @@ public class StraightLine {
         Vector end = start.clone().add(bound.getWidth(), bound.getHeight());
         Vector startLine = getBoundPoint(start, end);
         Vector endLine = getBoundPoint(end, start);
-        Color currentColor = graphics.getColor();
-        Stroke currentStroke = graphics.getStroke();
         graphics.setColor(color);
         graphics.setStroke(new BasicStroke(weight, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         graphics.drawLine((int) startLine.getX(), (int) startLine.getY(), (int) endLine.getX(), (int) endLine.getY());
-        graphics.setColor(currentColor);
-        graphics.setStroke(currentStroke);
-    }
-
-    @Override
-    public String toString() {
-        return "StraightLine{" +
-                "a=" + a +
-                ", b=" + b +
-                ", c=" + c +
-                '}';
     }
 
     public double distanceFromSegmentToPoint(Vector point) {
@@ -164,4 +151,25 @@ public class StraightLine {
         return Math.abs(product) / ab.length();
     }
 
+    @Override
+    public String toString() {
+        return "StraightLine{" +
+                "a=" + a +
+                ", b=" + b +
+                ", c=" + c +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StraightLine that = (StraightLine) o;
+        return Double.compare(that.a, a) == 0 && Double.compare(that.b, b) == 0 && Double.compare(that.c, c) == 0 && Objects.equals(pointA, that.pointA) && Objects.equals(pointB, that.pointB);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(a, b, c, pointA, pointB);
+    }
 }

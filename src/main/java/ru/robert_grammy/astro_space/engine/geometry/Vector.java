@@ -4,7 +4,10 @@ import ru.robert_grammy.astro_space.utils.QMath;
 
 import java.util.Objects;
 
-public class Vector {
+public class Vector implements Cloneable {
+
+    private static final Vector ZERO = new Vector(0,0);
+    private static final Vector UNDEFINED = new Vector(Double.NaN, Double.NaN);
 
     private double x, y;
 
@@ -66,6 +69,7 @@ public class Vector {
         return this;
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     public Vector fromBasis(Vector xBasisVector) {
         Vector yBasisVector = new Vector(-xBasisVector.y, xBasisVector.x);
         return xBasisVector.multiply(x).add(yBasisVector.multiply(y));
@@ -87,8 +91,25 @@ public class Vector {
         this.y = y;
     }
 
+    public static Vector getZero() {
+        return ZERO.clone();
+    }
+
+    public static Vector getUndefined() {
+        return UNDEFINED.clone();
+    }
+
+    @Override
     public Vector clone() {
         return new Vector(x,y);
+    }
+    public void setXY(Vector vector) {
+        this.x = vector.x;
+        this.y = vector.y;
+    }
+    public void resetCoordinates() {
+        x = 0;
+        y = 0;
     }
 
     @Override
@@ -111,4 +132,5 @@ public class Vector {
                 ", y=" + y +
                 '}';
     }
+
 }

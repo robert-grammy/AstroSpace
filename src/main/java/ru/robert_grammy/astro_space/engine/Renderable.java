@@ -6,8 +6,6 @@ public interface Renderable {
 
     void render(Graphics2D graphics);
 
-    void setZIndex(int z);
-
     int getZIndex();
 
 }

@@ -6,30 +6,43 @@ import ru.robert_grammy.astro_space.engine.geometry.Vector;
 import ru.robert_grammy.astro_space.engine.sound.GameSound;
 import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.graphics.Window;
+import ru.robert_grammy.astro_space.utils.rnd.RandomIntegerValueRange;
+import ru.robert_grammy.astro_space.utils.rnd.RandomValueRange;
 
 import java.awt.*;
 import java.awt.font.TextLayout;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 public class PowerUp implements Renderable {
 
-    private static final double FADE_SPEED = 0.15;
-
-    private static final Random rnd = new Random();
-
+    public static final Font DEFAULT_POWER_UP_FONT = new Font(Window.FONT_NAME, Font.PLAIN, 20);
+    public static final Stroke DEFAULT_POWER_UP_STROKE = new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    public static final RandomIntegerValueRange RND_SCORE_EARN_RANGE = new RandomIntegerValueRange(1, 11);
+    public static final int SIZE = 40;
+    public static final int BASE_SCORE_EARN_MULTIPLY = 50;
+    private static final int BASE_HEX_COLOR = 0xFFFFFF;
+    private static final int Z_INDEX = 20;
+    private static final RandomIntegerValueRange X_RANGE = new RandomIntegerValueRange(25, Main.getGame().getWindow().getBufferWidth() - 25);
+    private static final RandomIntegerValueRange Y_RANGE = new RandomIntegerValueRange(25, Main.getGame().getWindow().getBufferHeight() - 25);
+    private static final double FADE_SPEED = .15;
     private final Vector position;
     private final PowerType type;
-    private double alpha = 0.0;
+    private static  Color fill;
+    private static  Color outline;
+    private static  Color symbolColor;
+    private double alpha = .0;
 
     public PowerUp() {
         this(PowerType.getRandom());
     }
 
     public PowerUp(PowerType type) {
-        position = new Vector(rnd.nextInt(25, Main.getGame().getWindow().getBufferWidth() - 25), rnd.nextInt(25, Main.getGame().getWindow().getBufferHeight() - 25));
+        position = new Vector(
+                X_RANGE.randomValue(),
+                Y_RANGE.randomValue()
+        );
         this.type = type;
     }
 
@@ -43,37 +56,33 @@ public class PowerUp implements Renderable {
 
     @Override
     public void render(Graphics2D graphics) {
-        Color fill = new Color(type.getHexRGB() + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
-        Color outline = new Color(0xFFFFFF + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
-        Color symbolColor = new Color(0xFFFFFF + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
-        alpha += FADE_SPEED;
+        if (alpha < 255) {
+            alpha += FADE_SPEED;
+            fill = new Color(type.getHexRGB() + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
+            outline = new Color(BASE_HEX_COLOR + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
+            symbolColor = new Color(BASE_HEX_COLOR + ((int) (alpha >= 255 ? 255 : alpha) << 24), true);
+        }
         graphics.setColor(fill);
-        graphics.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.fillOval((int) position.getX() - 20, (int) position.getY() - 20, 40, 40);
+        graphics.setStroke(DEFAULT_POWER_UP_STROKE);
+        graphics.fillOval((int) position.getX() - (SIZE / 2), (int) position.getY() - (SIZE / 2), SIZE, SIZE);
         graphics.setColor(outline);
-        graphics.drawOval((int) position.getX() - 20, (int) position.getY() - 20, 40, 40);
-        Font font = new Font(Window.FONT_NAME, Font.PLAIN, 20);
-        graphics.setFont(font);
+        graphics.drawOval((int) position.getX() - (SIZE / 2), (int) position.getY() - (SIZE / 2), SIZE, SIZE);
+        graphics.setFont(DEFAULT_POWER_UP_FONT);
         graphics.setColor(symbolColor);
-        TextLayout textLayout = new TextLayout(type.getSymbol(), font, graphics.getFontRenderContext());
+        TextLayout textLayout = new TextLayout(type.getSymbol(), DEFAULT_POWER_UP_FONT, graphics.getFontRenderContext());
         double xTextOffset = textLayout.getBounds().getWidth()/2;
         double yTextOffset = textLayout.getAscent()/2;
         graphics.drawString(type.getSymbol(), (int) (position.getX() - xTextOffset), (int) (position.getY() + yTextOffset - 4));
     }
 
     @Override
-    public void setZIndex(int z) {}
-
-    @Override
     public int getZIndex() {
-        return 20;
+        return Z_INDEX;
     }
 
     public void kill() {
         Main.getGame().unregister(this);
-        Rectangle puffBound = new Rectangle((int) (position.getX() - 25), (int) (position.getY() - 25), 50, 50);
-        ParticleGenerator puff = new ParticleGenerator(50, 30, puffBound, 15, 40, 30, 150, 2, 3, 0x117711);
-        puff.setRecurring(false);
+        ParticleGenerator puff = ParticleGenerator.createPuff(position);
         Main.getGame().register(puff);
         GameSound.PUFF.get().play();
     }
@@ -88,15 +97,11 @@ public class PowerUp implements Renderable {
         ADD_SCORE(300, 0x008844, "+", 0),
         FREEZER(75, 0x008888, "F", 1200);
 
-        private static final int totalWeight;
-        static {
-            totalWeight = IntStream.of(Arrays.stream(values()).mapToInt(PowerType::getWeight).toArray()).sum();
-        }
-
+        private static final int totalWeight = IntStream.of(Arrays.stream(values()).mapToInt(PowerType::getWeight).toArray()).sum();
         private final int weight;
         private final int rgb;
-        private final String symbol;
         private final int duration;
+        private final String symbol;
 
         PowerType(int weight, int rgb, String symbol, int duration) {
             this.weight = weight;
@@ -116,13 +121,12 @@ public class PowerUp implements Renderable {
         public String getSymbol() {
             return symbol;
         }
-
         public int getDuration() {
             return duration;
         }
 
         public static PowerType getRandom() {
-            int value = rnd.nextInt(totalWeight);
+            int value = RandomValueRange.RND.nextInt(totalWeight);
             int cumulative = 0;
             for (int i = 0; i<values().length; i++) {
                 PowerType type = (PowerType) Arrays.stream(values()).sorted(Comparator.comparingInt(PowerType::getWeight)).toArray()[i];
@@ -133,6 +137,7 @@ public class PowerUp implements Renderable {
             }
             return DOUBLE_SCORE;
         }
+
 
     }
 

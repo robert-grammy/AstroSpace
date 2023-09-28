@@ -1,6 +1,6 @@
 package ru.robert_grammy.astro_space.engine.sound;
 
-import ru.robert_grammy.astro_space.Main;
+import ru.robert_grammy.astro_space.utils.GameDebugger;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
@@ -12,7 +12,7 @@ public class Sound implements AutoCloseable {
     private FloatControl volumeControl;
     private boolean playing = false;
 
-    public Sound(AudioInputStream stream) {
+    Sound(AudioInputStream stream) {
         try {
             this.stream = stream;
             clip = AudioSystem.getClip();
@@ -22,7 +22,7 @@ public class Sound implements AutoCloseable {
             });
             volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
         } catch (LineUnavailableException | IOException e) {
-            Main.getGame().getGameDebugger().console(e);
+            GameDebugger.console(e);
         }
     }
 
@@ -58,7 +58,7 @@ public class Sound implements AutoCloseable {
         return clip.getFramePosition();
     }
 
-    public int getClipLenght() {
+    public int getClipLength() {
         return clip.getFrameLength();
     }
 
@@ -69,7 +69,7 @@ public class Sound implements AutoCloseable {
     }
 
     public boolean isEnded() {
-        return getClipPosition() == getClipLenght();
+        return getClipPosition() == getClipLength();
     }
 
     public void loop() {
@@ -104,10 +104,10 @@ public class Sound implements AutoCloseable {
     }
 
     public float getVolume() {
-        float v = volumeControl.getValue();
+        float value = volumeControl.getValue();
         float min = volumeControl.getMinimum();
         float max = volumeControl.getMaximum();
-        return (v-min)/(max-min);
+        return (value-min)/(max-min);
     }
 
 }

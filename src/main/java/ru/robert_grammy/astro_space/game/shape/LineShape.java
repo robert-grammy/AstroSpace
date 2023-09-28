@@ -9,12 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LineShape {
+
+    public static final int DEFAULT_ROTATION = 180;
+    public static final int DEFAULT_LINE_WEIGHT = 2;
+    private static final Vector X_BASIS_VECTOR = new Vector(1, 0);
     private final List<Vector> points = new ArrayList<>();
-    private final Vector xBasisVector = new Vector(1, 0);
-    private double degree;
     private final Color fillColor;
     private final Color lineColor;
     private final float lineWeight;
+    private double degree;
 
     public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, List<Vector> points) {
         this.degree = degree;
@@ -33,10 +36,10 @@ public class LineShape {
     }
 
     public List<Vector> getRealPoints(Vector position) {
-        return points.stream().map(Vector::clone).map(point -> point.fromBasis(xBasisVector.clone().rotate(getRotation())).add(position)).toList();
+        return points.stream().map(Vector::clone).map(point -> point.fromBasis(X_BASIS_VECTOR.clone().rotate(getRotation())).add(position)).toList();
     }
 
-    public List<StraightLine> getShapeRealLines(Vector position) {
+    public List<StraightLine> getRealLines(Vector position) {
         List<Vector> points = getRealPoints(position);
         List<StraightLine> lines = new ArrayList<>();
         for (int i = 0; i<points.size(); i++) {
@@ -75,7 +78,7 @@ public class LineShape {
     }
 
     public Vector getXBasisVector() {
-        return xBasisVector;
+        return X_BASIS_VECTOR;
     }
 
 }

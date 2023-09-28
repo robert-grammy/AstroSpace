@@ -4,9 +4,9 @@ import ru.robert_grammy.astro_space.game.Game;
 
 public class Main {
 
-    private final static Game game = new Game();
+    private static final Game game = new Game();
 
-    public static void main(String[] args) {
+    public static void main(String... args) {
         game.play();
     }
 

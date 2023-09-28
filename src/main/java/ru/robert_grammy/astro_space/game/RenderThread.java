@@ -10,21 +10,17 @@ public class RenderThread implements Runnable {
     public RenderThread(Game game) {
         this.game = game;
         thread = new Thread(this, THREAD_NAME);
+        thread.setDaemon(true);
     }
 
     public void start() {
         thread.start();
     }
 
-    public void stop() {
-        thread.interrupt();
-    }
-
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             game.render();
-            game.getGameDebugger().addFps();
         }
     }
 

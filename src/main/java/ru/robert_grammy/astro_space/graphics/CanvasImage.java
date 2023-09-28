@@ -1,6 +1,6 @@
 package ru.robert_grammy.astro_space.graphics;
 
-import ru.robert_grammy.astro_space.Main;
+import ru.robert_grammy.astro_space.utils.GameDebugger;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -14,7 +14,6 @@ import java.util.List;
 public class CanvasImage {
 
     private static final int CLEAR_COLOR = 0xFF110022;
-
     private final BufferedImage image;
     private final Graphics2D graphics;
     private final int[] pixels;
@@ -65,7 +64,7 @@ public class CanvasImage {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                Main.getGame().getGameDebugger().console(e);
+                GameDebugger.console(e);
             }
         });
         return result;

@@ -5,8 +5,9 @@ import java.util.Map;
 
 public final class QMath {
 
-    private final static Map<Integer, Double> sinTable = new HashMap<>();
-    private final static Map<Integer, Double> cosTable = new HashMap<>();
+    public static final int DEGREES_OF_RIGHT_ANGLE = 90;
+    private static final Map<Integer, Double> sinTable = new HashMap<>();
+    private static final Map<Integer, Double> cosTable = new HashMap<>();
 
     private QMath() {}
 

@@ -12,33 +12,56 @@ import ru.robert_grammy.astro_space.game.player.Player;
 import ru.robert_grammy.astro_space.game.powerup.PowerUp;
 import ru.robert_grammy.astro_space.game.shape.LineShape;
 import ru.robert_grammy.astro_space.game.shape.ShapeManager;
-import ru.robert_grammy.astro_space.graphics.Window;
 import ru.robert_grammy.astro_space.utils.QMath;
+import ru.robert_grammy.astro_space.utils.rnd.RandomIntegerValueRange;
+import ru.robert_grammy.astro_space.utils.rnd.RandomValueRange;
 
 import java.awt.*;
-import java.awt.font.TextLayout;
 import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 public class Asteroid implements Renderable, Updatable {
 
-    private static final Random rnd = new Random();
+    private final static RandomIntegerValueRange XY_SPAWN_OFFSET_RANGE = new RandomIntegerValueRange(-100, 100);
+    private final static RandomIntegerValueRange NEGATIVE_ZERO_POSITIVE_RANGE = new RandomIntegerValueRange(-1, 1);
+    private final static RandomIntegerValueRange DEGREES_OF_ANGLE_OFFSET_RANGE = new RandomIntegerValueRange(-100, 100);
+    private final static BasicStroke ASTEROID_LINE_WEIGHT = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    private final static int MIN_ASTEROIDS_COUNT = 2;
+    private final static int MIN_ASTEROID_SIZE = 3;
+    private final static int MIN_ASTEROID_SIZE_TO_SPLIT = 8;
+    private final static int ASTEROID_SPLIT_COEFFICIENT = 5;
+    private final static int ASTEROID_EXPLOSION_PARTICLE_HEX_COLOR = 0x7C2B2B;
+    private final static int ASTEROID_EXPLOSION_SIZE_COEFFICIENT = 6;
+    private final static int INSCRIBED_SIZE_COEFFICIENT = 10;
+    private final static int OUT_OF_SCREEN_OFFSET = 10;
+    private final static int ASTEROIDS_MAX_COUNT = 40;
+    private final static int ASTEROID_MAX_SIZE = 47;
+    private final static int ASTEROID_MIN_SIZE = 7;
+    private final static int DEFAULT_MAX_Z_INDEX = 90;
+    private final static int COEFFICIENT_TO_CALCULATE_MOVEMENT_SPEED_INCREASE = 35;
+    private final static double ROTATION_SPEED_RND_BOUND = 0.75;
+    private final static double DEFAULT_ROTATION_SPEED = 0.95;
+    private final static double ASTEROID_SIZE_BOUND_COEFFICIENT = 1.2;
+    private final static double ASTEROID_HEALTH_CALCULATE_COEFFICIENT = 3.5;
+    private final static double ASTEROID_MIN_MOVEMENT_SPEED = 0.60;
+    private final static double COEFFICIENT_TO_CALCULATE_MOVEMENT_SPEED_DECREASE = 0.35;
 
+    private final Sound boomSound = GameSound.BOOM.get();
+
+    private Vector inertia;
+    private Vector position;
+    private LineShape shape;
     private boolean rightRotation;
     private double rotationSpeed;
-    private Vector inertia;
-    private LineShape shape;
     private int zIndex;
     private int size;
-    private Vector position;
     private int health;
-    private boolean isDestroyed = false;
     private int destroyTimer;
+    private boolean isDestroyed = false;
     private boolean isResetImmune = true;
     private ParticleGenerator explosion;
-    private final Sound boomSound = GameSound.BOOM.get();
+    private Color asteroidColor;
 
     public Asteroid(int size, boolean rightRotation, double rotationSpeed, Vector inertia, Vector position) {
         this.size = size;
@@ -47,13 +70,14 @@ public class Asteroid implements Renderable, Updatable {
         this.rotationSpeed = rotationSpeed;
         this.inertia = inertia;
         this.shape = ShapeManager.generate(size);
-        this.zIndex = 90 - size;
-        this.health = (int) (size/3.5);
-        destroyTimer = (int) (size*1.5);
+        this.zIndex = DEFAULT_MAX_Z_INDEX - size;
+        this.health = (int) (size / ASTEROID_HEALTH_CALCULATE_COEFFICIENT);
+        this.asteroidColor = shape.getFillColor();
+        destroyTimer = size * 2;
     }
 
     public Asteroid() {
-        this(10, true, 0.5, new Vector(1,0), new Vector(0,0));
+        reset();
     }
 
     @Override
@@ -68,90 +92,69 @@ public class Asteroid implements Renderable, Updatable {
             }
             path.lineTo(point.getX(), point.getY());
         }
-        firstPoint = Optional.ofNullable(firstPoint).orElse(new Vector(-1, -1));
+        firstPoint = Optional.ofNullable(firstPoint).orElse(Vector.getZero());
         path.lineTo(firstPoint.getX(), firstPoint.getY());
         path.closePath();
-        Stroke stroke = graphics.getStroke();
-        int hexFillColor = shape.getFillColor().getRGB();
-        int colorBrighter = (int) (48 * (((size/3.0) - health)/(size/3)));
-        hexFillColor = hexFillColor + colorBrighter + (colorBrighter << 8) + (colorBrighter << 16) ;
-        graphics.setColor(new Color(hexFillColor));
+        graphics.setColor(asteroidColor);
         graphics.fill(path);
-        graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        graphics.setStroke(ASTEROID_LINE_WEIGHT);
         graphics.setColor(shape.getLineColor());
         graphics.draw(path);
-        graphics.setStroke(stroke);
-        graphics.setColor(Color.BLACK);
-
-        Rectangle lineBound = new Rectangle((int) (position.getX() - 5*size), (int) (position.getY() - 5*size), 10*size, 10*size);
-        if (Main.getGame().getGameDebugger().isDrawAsteroidShapeLines()) {
-            shape.getShapeRealLines(position).forEach(line -> line.draw(graphics, lineBound, Color.YELLOW, 1));
-        }
-        if (Main.getGame().getGameDebugger().isDrawAsteroidLineBound()) {
-            graphics.setColor(Color.GREEN);
-            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            graphics.drawRect(lineBound.x, lineBound.y, lineBound.width, lineBound.height);
-            graphics.setStroke(stroke);
-        }
-        if (Main.getGame().getGameDebugger().isDrawAsteroidCircleBound()) {
-            graphics.setStroke(new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            graphics.setColor(Color.RED);
-            graphics.drawOval((int) (position.getX()-size*3), (int) (position.getY()-size*3), size*6, size*6);
-            graphics.setStroke(stroke);
-            graphics.setColor(Color.BLACK);
-        }
-        if (Main.getGame().getGameDebugger().isDrawAsteroidParams()) {
-            Font baseFont = graphics.getFont();
-            Font font = new Font(Window.FONT_NAME, Font.PLAIN, (int) (size*1.75));
-            graphics.setFont(font);
-            graphics.setColor(Color.BLUE);
-            TextLayout textLayout = new TextLayout(String.valueOf(size), font, graphics.getFontRenderContext());
-            double xTextOffset = textLayout.getBounds().getWidth()/2;
-            graphics.drawString(String.valueOf(size), (int) (position.getX() - xTextOffset), (int) (position.getY()));
-            graphics.setColor(Color.PINK);
-            textLayout = new TextLayout(String.valueOf(health), font, graphics.getFontRenderContext());
-            xTextOffset = textLayout.getBounds().getWidth()/2;
-            double yTextOffset = textLayout.getBounds().getHeight()/2;
-            graphics.drawString(String.valueOf(health), (int) (position.getX() - xTextOffset), (int) (position.getY() + 2*yTextOffset));
-            graphics.setColor(Color.BLACK);
-            graphics.setFont(baseFont);
-        }
     }
 
     public void damage() {
         health--;
+        colorChange();
+    }
+
+    private void colorChange() {
+        int hexFillColor = shape.getFillColor().getRGB();
+        double thirdOfSize = size / 3.0;
+        int colorBrighter = (int) (48 * ((thirdOfSize - health) / thirdOfSize));
+        hexFillColor += colorBrighter + (colorBrighter << 8) + (colorBrighter << 16);
+        asteroidColor = new Color(hexFillColor);
     }
 
     public void destroy() {
         kill();
-        if (size > 8) {
-            int asteroidCountBound = size/5;
-            int asteroidCount = asteroidCountBound <= 2 ? 2 : rnd.nextInt(2, size/5);
-            for (int i = asteroidCount; i>0; i--) {
-                Vector position = new Vector(rnd.nextInt((int) this.position.getX(), (int) (this.position.getX() + size)), rnd.nextInt((int) this.position.getY(), (int) (this.position.getY() + size)));
-                int size = this.size / asteroidCount;
-                size = Math.max(size, 3);
-                double rotationSpeed = 1 + rnd.nextDouble(0.5);
-                boolean rightRotation = rnd.nextDouble() < 0.5;
-                int degree = (int) (Math.pow(-1, Math.round(1 + rnd.nextDouble())) * 45 + rnd.nextDouble(-150, 150));
-                Vector inertia = new Vector(this.inertia.getX() * QMath.cos(degree) - this.inertia.getY() * QMath.sin(degree), this.inertia.getX() * QMath.sin(degree) + this.inertia.getY() * QMath.cos(degree));
-                Asteroid asteroid = new Asteroid(size, rightRotation, rotationSpeed, inertia, position);
-                Main.getGame().register(asteroid);
-            }
-        }
+        split();
     }
 
     public void kill() {
         if (isDestroyed) return;
         isDestroyed = true;
-        Rectangle explosionBound = new Rectangle((int) (position.getX() - size*3), (int) (position.getY() - size*3), size*6, size*6);
-        explosion = new ParticleGenerator(50, 100, explosionBound, 15, 40, 30, 200, 2, 5, 0x7C2B2B);
+        int explosionSize = size * ASTEROID_EXPLOSION_SIZE_COEFFICIENT;
+        explosion = ParticleGenerator.createExplosion(position, explosionSize, ASTEROID_EXPLOSION_PARTICLE_HEX_COLOR);
         Main.getGame().register(explosion);
         boomSound.play();
     }
 
-    @Override
-    public void setZIndex(int z) {}
+    private void split() {
+        if (size > MIN_ASTEROID_SIZE_TO_SPLIT) {
+            int asteroidCountBound = size / ASTEROID_SPLIT_COEFFICIENT;
+            RandomIntegerValueRange countRange = new RandomIntegerValueRange(MIN_ASTEROIDS_COUNT, asteroidCountBound);
+            RandomIntegerValueRange xRange = new RandomIntegerValueRange((int) this.position.getX() - (size / 2), (int) (this.position.getX() + size));
+            RandomIntegerValueRange yRange = new RandomIntegerValueRange((int) this.position.getY() - (size / 2), (int) (this.position.getY() + size));
+            int asteroidCount = asteroidCountBound <= MIN_ASTEROIDS_COUNT ? MIN_ASTEROIDS_COUNT : countRange.randomValue();
+            for (int i = asteroidCount; i>0; i--) {
+                Vector position = new Vector(
+                        xRange.randomValue(),
+                        yRange.randomValue()
+                );
+                int size = this.size / asteroidCount;
+                size = Math.max(size, MIN_ASTEROID_SIZE);
+                double rotationSpeed = DEFAULT_ROTATION_SPEED + RandomValueRange.RND.nextDouble(ROTATION_SPEED_RND_BOUND);
+                boolean rightRotation = RandomValueRange.RND.nextBoolean();
+                int degree = NEGATIVE_ZERO_POSITIVE_RANGE.randomValue() * (QMath.DEGREES_OF_RIGHT_ANGLE / 2) + DEGREES_OF_ANGLE_OFFSET_RANGE.randomValue();
+                Vector inertia = new Vector(
+                        this.inertia.getX() * QMath.cos(degree) - this.inertia.getY() * QMath.sin(degree),
+                        this.inertia.getX() * QMath.sin(degree) + this.inertia.getY() * QMath.cos(degree)
+                );
+                Asteroid asteroid = new Asteroid(size, rightRotation, rotationSpeed, inertia, position);
+                Main.getGame().register(asteroid);
+            }
+        }
+    }
 
     @Override
     public int getZIndex() {
@@ -209,15 +212,31 @@ public class Asteroid implements Renderable, Updatable {
         if (health <= 0) {
             destroy();
         }
-        if (position.getX() < (-size*10 - 10)*2 || position.getX() > (Main.getGame().getWindow().getBufferWidth() + size*10 + 10)*2 || position.getY() < (-size*10 - 10)*2 || position.getY() > (Main.getGame().getWindow().getBufferHeight() + size*10 + 10)*2) {
+        int inscribedSize = size * INSCRIBED_SIZE_COEFFICIENT;
+        if (
+                position.getX() < (-inscribedSize - OUT_OF_SCREEN_OFFSET) * 2 ||
+                position.getX() > (Main.getGame().getWindow().getBufferWidth() + inscribedSize + OUT_OF_SCREEN_OFFSET) * 2 ||
+                position.getY() < (-inscribedSize - OUT_OF_SCREEN_OFFSET) * 2 ||
+                position.getY() > (Main.getGame().getWindow().getBufferHeight() + inscribedSize + OUT_OF_SCREEN_OFFSET) * 2
+        ) {
             reset();
         }
         if (isResetImmune) {
-            if (position.getX() >= 0 || position.getX() <= Main.getGame().getWindow().getBufferWidth() || position.getY() >= 0 || position.getY() <= Main.getGame().getWindow().getBufferHeight()) {
+            if (
+                    position.getX() >= 0 ||
+                    position.getX() <= Main.getGame().getWindow().getBufferWidth() ||
+                    position.getY() >= 0 ||
+                    position.getY() <= Main.getGame().getWindow().getBufferHeight()
+            ) {
                 isResetImmune = false;
             }
         } else {
-            if (position.getX() < -size*10 - 10 || position.getX() > Main.getGame().getWindow().getBufferWidth() + size*10 + 10 || position.getY() < -size*10 - 10 || position.getY() > Main.getGame().getWindow().getBufferHeight() + size*10 + 10) {
+            if (
+                    position.getX() < -inscribedSize - OUT_OF_SCREEN_OFFSET ||
+                    position.getX() > Main.getGame().getWindow().getBufferWidth() + inscribedSize + OUT_OF_SCREEN_OFFSET ||
+                    position.getY() < -inscribedSize - OUT_OF_SCREEN_OFFSET ||
+                    position.getY() > Main.getGame().getWindow().getBufferHeight() + inscribedSize + OUT_OF_SCREEN_OFFSET
+            ) {
                 reset();
             }
         }
@@ -233,21 +252,29 @@ public class Asteroid implements Renderable, Updatable {
 
     public void reset() {
         int asteroidsCount = Main.getGame().getAsteroidsCount();
-
-        if (asteroidsCount > 40) {
+        if (asteroidsCount > ASTEROIDS_MAX_COUNT) {
             Main.getGame().unregister(this);
             return;
         }
 
-        int size = rnd.nextInt(7, (int) (47 - asteroidsCount/1.20));
-        int boundLineSize = size * 10;
-        double xOffset = rnd.nextDouble(-100, 100);
-        double yOffset = rnd.nextDouble(-100, 100);
-        xOffset = xOffset < 0 ? xOffset - boundLineSize : Main.getGame().getWindow().getBufferWidth() + xOffset + boundLineSize;
-        yOffset = yOffset < 0 ? yOffset - boundLineSize : Main.getGame().getWindow().getBufferHeight() + yOffset + boundLineSize;
-        double rotationSpeed = 0.95 + rnd.nextDouble(0.75);
-        boolean rightRotation = rnd.nextDouble() < 0.5;
-        Vector inertia = new Vector(rnd.nextInt(Main.getGame().getWindow().getBufferWidth()) - xOffset, rnd.nextInt(Main.getGame().getWindow().getBufferHeight()) - yOffset).normalize().multiply(rnd.nextDouble(35.0/size) + 0.60 - (0.35 * (asteroidsCount/40.0)));
+        RandomIntegerValueRange sizeRange = new RandomIntegerValueRange(ASTEROID_MIN_SIZE, (int) (ASTEROID_MAX_SIZE - asteroidsCount/ASTEROID_SIZE_BOUND_COEFFICIENT));
+        int size = sizeRange.randomValue();
+        int inscribedSize = size * INSCRIBED_SIZE_COEFFICIENT;
+        double xOffset = XY_SPAWN_OFFSET_RANGE.randomValue();
+        double yOffset = XY_SPAWN_OFFSET_RANGE.randomValue();
+        xOffset = xOffset < 0 ? xOffset - inscribedSize : Main.getGame().getWindow().getBufferWidth() + xOffset + inscribedSize;
+        yOffset = yOffset < 0 ? yOffset - inscribedSize : Main.getGame().getWindow().getBufferHeight() + yOffset + inscribedSize;
+        double rotationSpeed = DEFAULT_ROTATION_SPEED + RandomValueRange.RND.nextDouble(ROTATION_SPEED_RND_BOUND);
+        boolean rightRotation = RandomValueRange.RND.nextBoolean();
+        double speedIncrease = RandomValueRange.RND.nextDouble((double) COEFFICIENT_TO_CALCULATE_MOVEMENT_SPEED_INCREASE/size);
+        double speedDecrease = COEFFICIENT_TO_CALCULATE_MOVEMENT_SPEED_DECREASE * ((double) asteroidsCount/ASTEROIDS_MAX_COUNT);
+        double inertiaVectorScale = ASTEROID_MIN_MOVEMENT_SPEED + speedIncrease - speedDecrease;
+        Vector inertia = new Vector(
+                RandomValueRange.RND.nextInt(Main.getGame().getWindow().getBufferWidth()) - xOffset,
+                RandomValueRange.RND.nextInt(Main.getGame().getWindow().getBufferHeight()) - yOffset
+        )
+                .normalize()
+                .multiply(inertiaVectorScale);
         Vector position = new Vector(xOffset, yOffset);
 
         this.size = size;
@@ -256,9 +283,10 @@ public class Asteroid implements Renderable, Updatable {
         this.rotationSpeed = rotationSpeed;
         this.inertia = inertia;
         this.shape = ShapeManager.generate(size);
-        this.zIndex = 90 - size;
-        this.health = (int) (size/3.5);
-        destroyTimer = size*2;
+        this.zIndex = DEFAULT_MAX_Z_INDEX - size;
+        this.health = (int) (size / ASTEROID_HEALTH_CALCULATE_COEFFICIENT);
+        this.asteroidColor = shape.getFillColor();
+        destroyTimer = size * 2;
     }
 
     public LineShape getShape() {

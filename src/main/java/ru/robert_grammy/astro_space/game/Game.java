@@ -11,7 +11,6 @@ import ru.robert_grammy.astro_space.game.background.ParticleGenerator;
 import ru.robert_grammy.astro_space.game.player.Player;
 import ru.robert_grammy.astro_space.game.powerup.PowerUp;
 import ru.robert_grammy.astro_space.graphics.Window;
-import ru.robert_grammy.astro_space.utils.GameDebugger;
 import ru.robert_grammy.astro_space.utils.TimeManager;
 
 import java.awt.*;
@@ -23,24 +22,21 @@ import java.util.stream.IntStream;
 
 public class Game {
 
+    private final RenderThread render;
+    private final UpdateThread update;
     private final Window window = new Window();
-    private final GameDebugger gameDebugger = new GameDebugger();
     private final List<Renderable> renderables = new ArrayList<>();
     private List<Renderable> renderablesDublicate;
     private final List<Updatable> updatables = new ArrayList<>();
     private List<Updatable> updatablesDublicate;
     private final TimeManager time = new TimeManager(60);
     private boolean running = false;
-
+    private boolean paused = false;
     private Player player;
     private int asteroidsCount = 0;
     private int score = 0;
     private int bestScore = 0;
-    private boolean paused = false;
-    private int scoreTimer = (int) time.getUpdateRate();
-
-    private RenderThread render;
-    private UpdateThread update;
+    private int scoreTimer = (int) time.updateRate();
 
     public Game() {
         render = new RenderThread(this);
@@ -63,23 +59,20 @@ public class Game {
         updatables.remove(updatable);
     }
 
-    public void updateRenderableList() {
-        renderablesDublicate = new ArrayList<>(renderables);
-    }
-
-    public void updateUpdatablesList() {
-        updatablesDublicate = new ArrayList<>(updatables);
-    }
-
-    public List<Updatable> getUpdatables() {
+    public synchronized List<Updatable> getUpdatables() {
         return updatablesDublicate;
     }
 
-    public List<Renderable> getRenderables() {
+    public synchronized List<Renderable> getRenderables() {
         return renderablesDublicate;
     }
 
-    public void register(Object object) {
+    public void updateRenderablesAndUpdatablesLists() {
+        renderablesDublicate = new ArrayList<>(renderables);
+        updatablesDublicate = new ArrayList<>(updatables);
+    }
+
+    public synchronized void register(Object object) {
         if (object instanceof Player) {
             player = (Player) object;
         }
@@ -91,7 +84,7 @@ public class Game {
         }
     }
 
-    public void unregister(Object object) {
+    public synchronized void unregister(Object object) {
         if (object instanceof Player) {
             player = null;
         }
@@ -103,31 +96,36 @@ public class Game {
         }
     }
 
-    public void unregisterAll() {
-        renderables.clear();
-        updatables.clear();
+    public void asteroidsInitialize() {
+        asteroidsCount = (int) Main.getGame().getUpdatables().stream().filter(object -> object instanceof Asteroid).count();
+        if (asteroidsCount == 0) {
+            List<Asteroid> asteroids = new ArrayList<>();
+            IntStream.range(0,3).forEach(i -> asteroids.add(new Asteroid()));
+            asteroids.forEach(this::register);
+            asteroidsCount = asteroids.size();
+        }
     }
 
     public void initialize() {
-        updateUpdatablesList();
-        updateRenderableList();
-
+        updateRenderablesAndUpdatablesLists();
         ParticleGenerator light = new ParticleGenerator((300 * (window.getBufferWidth()* window.getBufferHeight())/(1280*720)), 0);
         register(light);
 
-        Player player = new Player(window.getBufferWidth()/2.0,window.getBufferHeight()/2.0);
+        Vector spawnPosition = new Vector((double) window.getBufferWidth() / 2,(double) window.getBufferHeight() / 2);
+
+        Player player = new Player(spawnPosition);
         register(player);
-        Rectangle smokeBound = new Rectangle((int) (player.getPosition().getX() - 40), (int) (player.getPosition().getY() - 40), 40, 40);
-        ParticleGenerator smoke = new ParticleGenerator(50, 100, smokeBound, 30, 60, 40, 250, 1, 4, 0xEEFFEE);
-        Main.getGame().register(smoke);
+
+        ParticleGenerator smoke = ParticleGenerator.createSmoke(spawnPosition);
+        register(smoke);
         smoke.setRecurring(false);
 
         asteroidsInitialize();
     }
 
     public void reset() {
-        updatablesDublicate.stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
-        renderablesDublicate.stream().filter(renderable -> renderable instanceof PowerUp).map(powerUp -> (PowerUp) powerUp).forEach(PowerUp::kill);
+        getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
+        getRenderables().stream().filter(renderable -> renderable instanceof PowerUp).map(powerUp -> (PowerUp) powerUp).forEach(PowerUp::kill);
         player.setPosition(new Vector(window.getBufferWidth()/2.0,window.getBufferHeight()/2.0));
         player.resurrect();
         asteroidsInitialize();
@@ -139,11 +137,6 @@ public class Game {
         return player;
     }
 
-    public void reload() {
-        render = new RenderThread(this);
-        update = new UpdateThread(this);
-    }
-
     public void play() {
         if (running) return;
         initialize();
@@ -152,54 +145,11 @@ public class Game {
         running = true;
     }
 
-    public synchronized void stop() {
-        running = false;
-        render.stop();
-        update.stop();
-    }
-
     public Window getWindow() {
         return window;
     }
 
-    public GameDebugger getGameDebugger() {
-        return gameDebugger;
-    }
-
     public void control(Keyboard keyboard) {
-        if (keyboard.pressed(KeyEvent.VK_F1) && !keyboard.isMemorized(KeyEvent.VK_F1)) {
-            keyboard.memorizePress(KeyEvent.VK_F1);
-            gameDebugger.setDisplayFps(!gameDebugger.isDisplayFps());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F2) && !keyboard.isMemorized(KeyEvent.VK_F2)) {
-            keyboard.memorizePress(KeyEvent.VK_F2);
-            gameDebugger.setDisplayUps(!gameDebugger.isDisplayUps());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F3) && !keyboard.isMemorized(KeyEvent.VK_F3)) {
-            keyboard.memorizePress(KeyEvent.VK_F3);
-            gameDebugger.setDrawPlayerShapeLines(!gameDebugger.isDrawPlayerShapeLines());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F4) && !keyboard.isMemorized(KeyEvent.VK_F4)) {
-            keyboard.memorizePress(KeyEvent.VK_F4);
-            gameDebugger.setDrawPlayerLineBound(!gameDebugger.isDrawPlayerLineBound());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F5) && keyboard.isMemorized(KeyEvent.VK_F5)) {
-            keyboard.memorizePress(KeyEvent.VK_F5);
-            gameDebugger.setDrawAsteroidCircleBound(!gameDebugger.isDrawAsteroidCircleBound());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F6) && !keyboard.isMemorized(KeyEvent.VK_F6)) {
-            keyboard.memorizePress(KeyEvent.VK_F6);
-            gameDebugger.setDrawAsteroidLineBound(!gameDebugger.isDrawAsteroidLineBound());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F7) && !keyboard.isMemorized(KeyEvent.VK_F7)) {
-            keyboard.memorizePress(KeyEvent.VK_F7);
-            gameDebugger.setDrawAsteroidShapeLines(!gameDebugger.isDrawAsteroidShapeLines());
-        }
-        if (keyboard.pressed(KeyEvent.VK_F8) && !keyboard.isMemorized(KeyEvent.VK_F8)) {
-            keyboard.memorizePress(KeyEvent.VK_F8);
-            gameDebugger.setDrawAsteroidParams(!gameDebugger.isDrawAsteroidParams());
-        }
-
         if (keyboard.pressed(KeyEvent.VK_F12) && !keyboard.isMemorized(KeyEvent.VK_F12)) {
             keyboard.memorizePress(KeyEvent.VK_F12);
             window.setFullscreen(!window.isFullscreen());
@@ -224,32 +174,18 @@ public class Game {
 
     }
 
-    public void asteroidsInitialize() {
-        asteroidsCount = (int) Main.getGame().getUpdatables().stream().filter(object -> object instanceof Asteroid).count();
-        if (asteroidsCount == 0) {
-            List<Asteroid> asteroids = new ArrayList<>();
-            IntStream.range(0,3).forEach(i -> asteroids.add(new Asteroid()));
-            asteroids.stream().peek(Asteroid::reset).forEach(this::register);
-            asteroidsCount = asteroids.size();
-        }
-    }
-
     public void scoreIncrement() {
         if (player.isDestroyed()) return;
         scoreTimer--;
         if (scoreTimer <= 0) {
-            scoreTimer = (int) time.getUpdateRate();
-            addScore(1 + asteroidsCount/5);
+            scoreTimer = (int) time.updateRate();
+            addScore(1 + asteroidsCount / 5);
         }
     }
     public void addScore(int score) {
         if (player.isDestroyed()) return;
         if (player.onPower(PowerUp.PowerType.DOUBLE_SCORE)) score *= 2;
         this.score += score;
-    }
-
-    public int getAsteroidsCount() {
-        return asteroidsCount;
     }
 
     public void drawScoreText(Graphics2D graphics) {
@@ -331,11 +267,10 @@ public class Game {
     }
 
     public void update() {
-        updateUpdatablesList();
-        updateRenderableList();
+        updateRenderablesAndUpdatablesLists();
         control(window.getKeyboard());
         if (paused) return;
-        updatablesDublicate.forEach(Updatable::update);
+        getUpdatables().forEach(Updatable::update);
         scoreIncrement();
         asteroidsInitialize();
     }
@@ -343,7 +278,7 @@ public class Game {
     public void render() {
         window.clear();
         Graphics2D graphics = window.getGameGraphics();
-        renderablesDublicate.stream().sorted(Comparator.comparingInt(Renderable::getZIndex)).forEach(renderable -> renderable.render(graphics));
+        getRenderables().stream().sorted(Comparator.comparingInt(Renderable::getZIndex)).forEach(renderable -> renderable.render(graphics));
         drawScoreText(graphics);
         drawResultText(graphics);
         drawPauseText(graphics);
@@ -352,6 +287,10 @@ public class Game {
 
     public TimeManager getTimeManager() {
         return time;
+    }
+
+    public int getAsteroidsCount() {
+        return asteroidsCount;
     }
 
 }

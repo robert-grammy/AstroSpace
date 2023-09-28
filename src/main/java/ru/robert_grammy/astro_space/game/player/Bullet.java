@@ -17,38 +17,38 @@ import java.util.stream.Stream;
 
 public class Bullet implements Renderable, Updatable {
 
-    private int zIndex = 10;
-    private final Color fillColor = Color.BLACK;
-    private final Color outlineColor = Color.WHITE;
-    private float lineWeight = 1;
+    private static final Color FILL_COLOR = Color.BLACK;
+    private static final Color OUTLINE_COLOR = Color.WHITE;
+    private static final Sound DAMAGE_SOUND = GameSound.DAMAGE.get();
+    private static final int Z_INDEX = 10;
+    private static final int DEFAULT_BULLET_SIZE = 7;
+    private static final int SCORE_DEPENDENT_ON_ASTEROID_COEFFICIENT = 4;
+    private static final double MAX_SCORE_DEPENDENT_ON_ASTEROID_SIZE = 50.0;
+    private static final double MAX_SCORE_DEPENDENT_ON_ASTEROID_MOVEMENT_SPEED = .75;
     private int size = 7;
-    private final boolean doubleDamage;
-
-    private Vector lastPosition;
+    private final Stroke stroke;
     private final Vector position;
-
     private final Vector movement;
-
-    private final Sound damageSound = GameSound.DAMAGE.get();
+    private final Vector lastPosition;
+    private final boolean doubleDamage;
 
     public Bullet(Vector position, Vector movement) {
         this.position = position;
         this.movement = movement;
+        lastPosition = position.clone();
         doubleDamage = Main.getGame().getPlayer().onPower(PowerUp.PowerType.DOUBLE_DAMAGE);
-        size = doubleDamage ? size*2 : size;
-        lineWeight = doubleDamage ? lineWeight*2 : lineWeight;
+        size = doubleDamage ? size * 2 : size;
+        float lineWeight = doubleDamage ? 1 : 2;
+        stroke = new BasicStroke(lineWeight, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     }
 
     @Override
     public void render(Graphics2D graphics) {
-        Stroke stroke = graphics.getStroke();
-        graphics.setColor(fillColor);
-        graphics.fillOval((int) position.getX(), (int) position.getY(), size, size);
-        graphics.setStroke(new BasicStroke(lineWeight, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.setColor(outlineColor);
-        graphics.drawOval((int) position.getX() - size/2, (int) position.getY() - size/2, size, size);
         graphics.setStroke(stroke);
-        graphics.setColor(Color.BLACK);
+        graphics.setColor(FILL_COLOR);
+        graphics.fillOval((int) position.getX() - (size / 2), (int) position.getY() - (size / 2), size, size);
+        graphics.setColor(OUTLINE_COLOR);
+        graphics.drawOval((int) position.getX() - (size / 2), (int) position.getY() - (size / 2), size, size);
     }
 
     public void destroy() {
@@ -56,18 +56,13 @@ public class Bullet implements Renderable, Updatable {
     }
 
     @Override
-    public void setZIndex(int zIndex) {
-        this.zIndex = zIndex;
-    }
-
-    @Override
     public int getZIndex() {
-        return zIndex;
+        return Z_INDEX;
     }
 
     @Override
     public void update() {
-        lastPosition = position.clone();
+        lastPosition.setXY(position);
         position.add(movement);
         if (position.getX() < 0 || position.getX() > Main.getGame().getWindow().getBufferWidth() || position.getY() < 0 || position.getY() > Main.getGame().getWindow().getBufferHeight()) destroy();
         Vector futurePosition = position.clone().add(movement);
@@ -88,12 +83,12 @@ public class Bullet implements Renderable, Updatable {
                 boolean outAsteroidXRange = cross.getX() < Math.min(asteroidA.getX(), asteroidB.getX()) || cross.getX() > Math.max(asteroidA.getX(), asteroidB.getX());
                 if (outPlayerYRange || outPlayerXRange || outAsteroidYRange || outAsteroidXRange) {
                     Vector centerOffsetVector = position.clone().subtract(asteroid.getPosition());
-                    if (centerOffsetVector.length() > asteroid.getSize()*3) continue;
+                    if (centerOffsetVector.length() > asteroid.getSize() * 3) continue;
                 }
                 destroy();
-                double score = (50.0 - asteroid.getSize())/4 + size/15.0 + asteroid.getInertia().length()/0.75;
+                double score = (MAX_SCORE_DEPENDENT_ON_ASTEROID_SIZE - asteroid.getSize()) / SCORE_DEPENDENT_ON_ASTEROID_COEFFICIENT + (double) (size / DEFAULT_BULLET_SIZE) + asteroid.getInertia().length() / MAX_SCORE_DEPENDENT_ON_ASTEROID_MOVEMENT_SPEED;
                 Main.getGame().addScore((int) Math.floor(score));
-                damageSound.play();
+                DAMAGE_SOUND.play();
                 asteroid.damage();
                 if (doubleDamage) asteroid.damage();
             }

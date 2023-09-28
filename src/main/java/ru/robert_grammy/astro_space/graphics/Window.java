@@ -8,17 +8,17 @@ import java.awt.image.BufferStrategy;
 
 public class Window {
 
-    public final static String TITLE = "Astro Space";
-    public final static String FONT_NAME = "Comic Sans MS";
-    private final static double FRAME_WIDTH = 1600, FRAME_HEIGHT = 900;
-    private final static double SCREEN_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth(), SCREEN_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight();
-    private final static int BUFFER_STRATEGY_COUNT = 3;
-    private BufferStrategy bufferStrategy;
+    public static final String TITLE = "Astro Space";
+    public static final String FONT_NAME = "Comic Sans MS";
+    private static final int BUFFER_STRATEGY_COUNT = 3;
+    private static final double FRAME_WIDTH = 1600, FRAME_HEIGHT = 900;
+    private static final double SCREEN_WIDTH = Toolkit.getDefaultToolkit().getScreenSize().getWidth(), SCREEN_HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().getHeight();
     private final Keyboard keyboard = new Keyboard();
     private final Canvas canvas = new Canvas();
     private final Dimension dimension = new Dimension((int) FRAME_WIDTH, (int) FRAME_HEIGHT);
     private final CanvasImage canvasImage = new CanvasImage((int) FRAME_WIDTH, (int) FRAME_HEIGHT);
     private JFrame windowFrame = new JFrame();
+    private BufferStrategy bufferStrategy;
     private boolean fullscreen = false;
     private boolean visible = true;
 
