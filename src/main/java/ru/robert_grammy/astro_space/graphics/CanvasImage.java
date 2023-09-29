@@ -13,6 +13,7 @@ import java.util.List;
 
 public class CanvasImage {
 
+    private static final int SQRT_OF_OPTIMIZE_THREADS_SCALE_IMAGE_COUNT = 5;
     private static final int CLEAR_COLOR = 0xFF110022;
     private final BufferedImage image;
     private final Graphics2D graphics;
@@ -34,11 +35,11 @@ public class CanvasImage {
     }
 
     public BufferedImage get(double scale) {
-        return get(scale, 5);
+        return get(scale, SQRT_OF_OPTIMIZE_THREADS_SCALE_IMAGE_COUNT);
     }
 
-    public BufferedImage get(double scale, int threadsCount) {
-        return scale == 1 ? image : getScaledImage(image, scale, threadsCount);
+    public BufferedImage get(double scale, int sqrtOfThreadsCount) {
+        return scale == 1 ? image : getScaledImage(image, scale, sqrtOfThreadsCount);
     }
 
     private BufferedImage getScaledImage(BufferedImage image, double scale, int threadsCount) {

@@ -73,10 +73,6 @@ public class Window {
         return (int) FRAME_HEIGHT;
     }
 
-    public void setTitle(String title) {
-        windowFrame.setTitle(title);
-    }
-
     public void setFullscreen(boolean fullscreen) {
         this.fullscreen = fullscreen;
         if (fullscreen) {
@@ -111,7 +107,4 @@ public class Window {
         return fullscreen;
     }
 
-    public boolean isVisible() {
-        return visible;
-    }
 }

@@ -46,9 +46,9 @@ public class Asteroid implements Renderable, Updatable {
     private final static double ASTEROID_HEALTH_CALCULATE_COEFFICIENT = 3.5;
     private final static double ASTEROID_MIN_MOVEMENT_SPEED = 0.60;
     private final static double COEFFICIENT_TO_CALCULATE_MOVEMENT_SPEED_DECREASE = 0.35;
-
-    private final Sound boomSound = GameSound.BOOM.get();
-
+    private final static Sound BOOM_SOUND = GameSound.BOOM.get();
+    private boolean isDestroyed = false;
+    private boolean isResetImmune = true;
     private Vector inertia;
     private Vector position;
     private LineShape shape;
@@ -58,8 +58,6 @@ public class Asteroid implements Renderable, Updatable {
     private int size;
     private int health;
     private int destroyTimer;
-    private boolean isDestroyed = false;
-    private boolean isResetImmune = true;
     private ParticleGenerator explosion;
     private Color asteroidColor;
 
@@ -126,7 +124,7 @@ public class Asteroid implements Renderable, Updatable {
         int explosionSize = size * ASTEROID_EXPLOSION_SIZE_COEFFICIENT;
         explosion = ParticleGenerator.createExplosion(position, explosionSize, ASTEROID_EXPLOSION_PARTICLE_HEX_COLOR);
         Main.getGame().register(explosion);
-        boomSound.play();
+        BOOM_SOUND.play();
     }
 
     private void split() {
@@ -179,31 +177,30 @@ public class Asteroid implements Renderable, Updatable {
 
     private void playerCollision() {
         Player player = Main.getGame().getPlayer();
-        if (!player.isDestroyed()) {
-            List<Vector> asteroidPoints = shape.getRealPoints(position);
-            for (int i = 0; i<asteroidPoints.size(); i++) {
-                Vector asteroidA = asteroidPoints.get(i);
-                Vector asteroidB = asteroidPoints.get(i + 1 == asteroidPoints.size() ? 0 : i + 1);
-                StraightLine asteroidLine = new StraightLine(asteroidA, asteroidB);
-                List<Vector> playerPoints = player.getShape().getRealPoints(player.getPosition());
-                for (int j = 0; j<playerPoints.size(); j++) {
-                    Vector playerA = playerPoints.get(j);
-                    Vector playerB = playerPoints.get(j + 1 == playerPoints.size() ? 0 : j + 1);
-                    StraightLine playerLine = new StraightLine(playerA, playerB);
-                    if (asteroidLine.isParallel(playerLine)) continue;
-                    Vector cross = asteroidLine.getPointIntersectionLines(playerLine);
-                    boolean outPlayerYRange = cross.getY() < Math.min(playerA.getY(), playerB.getY()) || cross.getY() > Math.max(playerA.getY(), playerB.getY());
-                    boolean outPlayerXRange = cross.getX() < Math.min(playerA.getX(), playerB.getX()) || cross.getX() > Math.max(playerA.getX(), playerB.getX());
-                    boolean outAsteroidYRange = cross.getY() < Math.min(asteroidA.getY(), asteroidB.getY()) || cross.getY() > Math.max(asteroidA.getY(), asteroidB.getY());
-                    boolean outAsteroidXRange = cross.getX() < Math.min(asteroidA.getX(), asteroidB.getX()) || cross.getX() > Math.max(asteroidA.getX(), asteroidB.getX());
-                    if (outPlayerYRange || outPlayerXRange || outAsteroidYRange || outAsteroidXRange) continue;
-                    if (player.onPower(PowerUp.PowerType.INVINCIBLE)) {
-                        kill();
-                        return;
-                    }
-                    player.destroy();
+        if (player.isDestroyed()) return;
+        List<Vector> asteroidPoints = shape.getRealPoints(position);
+        for (int i = 0; i<asteroidPoints.size(); i++) {
+            Vector asteroidA = asteroidPoints.get(i);
+            Vector asteroidB = asteroidPoints.get(i + 1 == asteroidPoints.size() ? 0 : i + 1);
+            StraightLine asteroidLine = new StraightLine(asteroidA, asteroidB);
+            List<Vector> playerPoints = player.getShape().getRealPoints(player.getPosition());
+            for (int j = 0; j<playerPoints.size(); j++) {
+                Vector playerA = playerPoints.get(j);
+                Vector playerB = playerPoints.get(j + 1 == playerPoints.size() ? 0 : j + 1);
+                StraightLine playerLine = new StraightLine(playerA, playerB);
+                if (asteroidLine.isParallel(playerLine)) continue;
+                Vector cross = asteroidLine.getPointIntersectionLines(playerLine);
+                boolean outPlayerYRange = cross.getY() < Math.min(playerA.getY(), playerB.getY()) || cross.getY() > Math.max(playerA.getY(), playerB.getY());
+                boolean outPlayerXRange = cross.getX() < Math.min(playerA.getX(), playerB.getX()) || cross.getX() > Math.max(playerA.getX(), playerB.getX());
+                boolean outAsteroidYRange = cross.getY() < Math.min(asteroidA.getY(), asteroidB.getY()) || cross.getY() > Math.max(asteroidA.getY(), asteroidB.getY());
+                boolean outAsteroidXRange = cross.getX() < Math.min(asteroidA.getX(), asteroidB.getX()) || cross.getX() > Math.max(asteroidA.getX(), asteroidB.getX());
+                if (outPlayerYRange || outPlayerXRange || outAsteroidYRange || outAsteroidXRange) continue;
+                if (player.onPower(PowerUp.PowerType.INVINCIBLE)) {
+                    kill();
                     return;
                 }
+                player.destroy();
+                return;
             }
         }
     }
@@ -257,7 +254,7 @@ public class Asteroid implements Renderable, Updatable {
             return;
         }
 
-        RandomIntegerValueRange sizeRange = new RandomIntegerValueRange(ASTEROID_MIN_SIZE, (int) (ASTEROID_MAX_SIZE - asteroidsCount/ASTEROID_SIZE_BOUND_COEFFICIENT));
+        RandomIntegerValueRange sizeRange = new RandomIntegerValueRange(ASTEROID_MIN_SIZE, (int) (ASTEROID_MAX_SIZE - asteroidsCount / ASTEROID_SIZE_BOUND_COEFFICIENT));
         int size = sizeRange.randomValue();
         int inscribedSize = size * INSCRIBED_SIZE_COEFFICIENT;
         double xOffset = XY_SPAWN_OFFSET_RANGE.randomValue();

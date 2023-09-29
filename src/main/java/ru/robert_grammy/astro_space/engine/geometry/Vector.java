@@ -103,10 +103,12 @@ public class Vector implements Cloneable {
     public Vector clone() {
         return new Vector(x,y);
     }
+
     public void setXY(Vector vector) {
         this.x = vector.x;
         this.y = vector.y;
     }
+
     public void resetCoordinates() {
         x = 0;
         y = 0;

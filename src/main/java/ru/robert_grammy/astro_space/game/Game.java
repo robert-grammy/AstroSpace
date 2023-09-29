@@ -22,21 +22,41 @@ import java.util.stream.IntStream;
 
 public class Game {
 
+    private static final String CRASHED_TEXT = "You have crashed!";
+    private static final String NEW_RECORD = "New record! ";
+    private static final String BEST_SCORE = "Best score: %d. ";
+    private static final String YOUR_SCORE = "Your score: %d. Press R to restart!";
+    private static final String PAUSED = "PAUSED!";
+    private static final String RESUME = "Press P to resume!";
+    private static final Font SMALL_FONT = new Font(Window.FONT_NAME, Font.PLAIN, 24);
+    private static final Font MEDIUM_FONT = new Font(Window.FONT_NAME, Font.PLAIN, 32);
+    private static final Font LARGE_FONT = new Font(Window.FONT_NAME, Font.PLAIN, 64);
+    private static final Stroke DEFAULT_STROKE = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    private static final Color TEXT_AND_OUTLINE_COLOR = Color.WHITE;
+    private static final Color TEXT_BACKGROUND_COLOR = Color.BLACK;
+    private static final int MIN_SCORE_INCREMENT_VALUE = 1;
+    private static final int SCORE_INCREMENT_COEFFICIENT_DEPENDENT_ON_ASTEROIDS_COUNT = 5;
+    private static final int START_ASTEROIDS_COUNT = 3;
+    private static final int RESULT_BOARD_WIDTH = 720;
+    private static final int RESULT_BOARD_HEIGHT = 150;
+    private static final int RESULT_BOARD_Y_OFFSET = 45;
+    private static final int TEXT_INTERVAL = 5;
     private final RenderThread render;
     private final UpdateThread update;
     private final Window window = new Window();
+    private final Vector spawnPoint = new Vector((double) window.getBufferWidth() / 2,(double) window.getBufferHeight() / 2);
     private final List<Renderable> renderables = new ArrayList<>();
-    private List<Renderable> renderablesDublicate;
     private final List<Updatable> updatables = new ArrayList<>();
-    private List<Updatable> updatablesDublicate;
     private final TimeManager time = new TimeManager(60);
     private boolean running = false;
     private boolean paused = false;
-    private Player player;
     private int asteroidsCount = 0;
     private int score = 0;
     private int bestScore = 0;
     private int scoreTimer = (int) time.updateRate();
+    private List<Renderable> renderablesDublicate;
+    private List<Updatable> updatablesDublicate;
+    private Player player;
 
     public Game() {
         render = new RenderThread(this);
@@ -100,7 +120,7 @@ public class Game {
         asteroidsCount = (int) Main.getGame().getUpdatables().stream().filter(object -> object instanceof Asteroid).count();
         if (asteroidsCount == 0) {
             List<Asteroid> asteroids = new ArrayList<>();
-            IntStream.range(0,3).forEach(i -> asteroids.add(new Asteroid()));
+            IntStream.range(0,START_ASTEROIDS_COUNT).forEach(i -> asteroids.add(new Asteroid()));
             asteroids.forEach(this::register);
             asteroidsCount = asteroids.size();
         }
@@ -108,10 +128,10 @@ public class Game {
 
     public void initialize() {
         updateRenderablesAndUpdatablesLists();
-        ParticleGenerator light = new ParticleGenerator((300 * (window.getBufferWidth()* window.getBufferHeight())/(1280*720)), 0);
+        ParticleGenerator light = new ParticleGenerator(ParticleGenerator.BASE_STARS_COUNT, ParticleGenerator.STARS_Z_INDEX);
         register(light);
 
-        Vector spawnPosition = new Vector((double) window.getBufferWidth() / 2,(double) window.getBufferHeight() / 2);
+        Vector spawnPosition = this.spawnPoint.clone();
 
         Player player = new Player(spawnPosition);
         register(player);
@@ -126,7 +146,7 @@ public class Game {
     public void reset() {
         getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
         getRenderables().stream().filter(renderable -> renderable instanceof PowerUp).map(powerUp -> (PowerUp) powerUp).forEach(PowerUp::kill);
-        player.setPosition(new Vector(window.getBufferWidth()/2.0,window.getBufferHeight()/2.0));
+        player.setPosition(spawnPoint.clone());
         player.resurrect();
         asteroidsInitialize();
         bestScore = Math.max(bestScore, score);
@@ -179,7 +199,7 @@ public class Game {
         scoreTimer--;
         if (scoreTimer <= 0) {
             scoreTimer = (int) time.updateRate();
-            addScore(1 + asteroidsCount / 5);
+            addScore(MIN_SCORE_INCREMENT_VALUE + asteroidsCount / SCORE_INCREMENT_COEFFICIENT_DEPENDENT_ON_ASTEROIDS_COUNT);
         }
     }
     public void addScore(int score) {
@@ -190,80 +210,88 @@ public class Game {
 
     public void drawScoreText(Graphics2D graphics) {
         if (player.isDestroyed()) return;
-        Font font = new Font(Window.FONT_NAME, Font.PLAIN, 24);
-        graphics.setFont(font);
-        graphics.setColor(Color.WHITE);
+        graphics.setFont(SMALL_FONT);
+        graphics.setColor(TEXT_AND_OUTLINE_COLOR);
         graphics.drawString("Best score: " + Math.max(score, bestScore), window.getBufferWidth() - 250, 50);
         graphics.drawString("Score: " + score, window.getBufferWidth() - 250, 75);
     }
 
     public void drawResultText(Graphics2D graphics) {
         if (!player.isDestroyed()) return;
-        graphics.setColor(Color.BLACK);
-        graphics.fillRect(window.getBufferWidth()/2 - 360, getWindow().getBufferHeight()/2 - 120, 720, 150);
+        graphics.setColor(TEXT_BACKGROUND_COLOR);
+        graphics.fillRect(
+                window.getBufferWidth()/2 - (RESULT_BOARD_WIDTH / 2),
+                getWindow().getBufferHeight()/2 - (RESULT_BOARD_HEIGHT / 2) - RESULT_BOARD_Y_OFFSET,
+                RESULT_BOARD_WIDTH,
+                RESULT_BOARD_HEIGHT
+        );
 
-        graphics.setColor(Color.WHITE);
-        graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.drawRect(window.getBufferWidth()/2 - 360, getWindow().getBufferHeight()/2 - 120, 720, 150);
+        graphics.setColor(TEXT_AND_OUTLINE_COLOR);
+        graphics.setStroke(DEFAULT_STROKE);
+        graphics.drawRect(
+                window.getBufferWidth()/2 - (RESULT_BOARD_WIDTH / 2),
+                getWindow().getBufferHeight()/2 - (RESULT_BOARD_HEIGHT / 2) - RESULT_BOARD_Y_OFFSET,
+                RESULT_BOARD_WIDTH,
+                RESULT_BOARD_HEIGHT
+        );
 
-        Font font = new Font(Window.FONT_NAME, Font.PLAIN, 64);
-        graphics.setFont(font);
-        String crashedText = "You have crashed!";
-        TextLayout textLayout = new TextLayout(crashedText, font, graphics.getFontRenderContext());
+        graphics.setFont(LARGE_FONT);
+        TextLayout textLayout = new TextLayout(CRASHED_TEXT, LARGE_FONT, graphics.getFontRenderContext());
         double xTextOffset = textLayout.getBounds().getWidth()/2;
         double yTextOffset = textLayout.getAscent()/2;
         double progress = GameSound.GAME_OVER.get().getClipProgress();
         int hexColor = 0xFFFFFF + ((int) (255 * progress) << 24);
         graphics.setColor(new Color(hexColor, true));
-        graphics.drawString(crashedText, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - (yTextOffset - 5) * progress));
+        graphics.drawString(CRASHED_TEXT, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - (yTextOffset - TEXT_INTERVAL) * progress));
 
         if (GameSound.GAME_OVER.get().isPlaying() && !GameSound.GAME_OVER.get().isEnded()) return;
 
-        font = new Font(Window.FONT_NAME, Font.PLAIN, 24);
-        graphics.setFont(font);
+        graphics.setFont(SMALL_FONT);
         graphics.setColor(Color.WHITE);
         StringBuilder scoreLabel = new StringBuilder();
         if (score > bestScore) {
-            scoreLabel.append("New record! ");
+            scoreLabel.append(NEW_RECORD);
         } else {
-            scoreLabel.append("Best score: ").append(bestScore).append(". ");
+            scoreLabel.append(BEST_SCORE.formatted(bestScore));
         }
-        scoreLabel.append("Your score: ").append(score).append(". Press R to restart!");
+        scoreLabel.append(YOUR_SCORE.formatted(score));
         String scoreText = scoreLabel.toString();
-        textLayout = new TextLayout(scoreText, font, graphics.getFontRenderContext());
+        textLayout = new TextLayout(scoreText, SMALL_FONT, graphics.getFontRenderContext());
         xTextOffset = textLayout.getBounds().getWidth()/2;
         yTextOffset = textLayout.getAscent()/2;
-        graphics.drawString(scoreLabel.toString(), (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset + 5));
+        graphics.drawString(scoreLabel.toString(), (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset + TEXT_INTERVAL));
     }
 
     public void drawPauseText(Graphics2D graphics) {
         if (player.isDestroyed() || !paused) return;
-        graphics.setColor(Color.BLACK);
-        graphics.fillRect(window.getBufferWidth()/2 - 360, getWindow().getBufferHeight()/2 - 120, 720, 150);
+        graphics.setColor(TEXT_BACKGROUND_COLOR);
+        graphics.fillRect(
+                window.getBufferWidth()/2 - (RESULT_BOARD_WIDTH / 2),
+                getWindow().getBufferHeight()/2 - (RESULT_BOARD_HEIGHT / 2) - RESULT_BOARD_Y_OFFSET,
+                RESULT_BOARD_WIDTH,
+                RESULT_BOARD_HEIGHT
+        );
 
-        graphics.setColor(Color.WHITE);
-        graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.drawRect(window.getBufferWidth()/2 - 360, getWindow().getBufferHeight()/2 - 120, 720, 150);
-        Font baseFont = graphics.getFont();
+        graphics.setColor(TEXT_AND_OUTLINE_COLOR);
+        graphics.setStroke(DEFAULT_STROKE);
+        graphics.drawRect(
+                window.getBufferWidth()/2 - (RESULT_BOARD_WIDTH / 2),
+                getWindow().getBufferHeight()/2 - (RESULT_BOARD_HEIGHT / 2) - RESULT_BOARD_Y_OFFSET,
+                RESULT_BOARD_WIDTH,
+                RESULT_BOARD_HEIGHT
+        );
 
-        Font font = new Font(Window.FONT_NAME, Font.PLAIN, 64);
-        graphics.setFont(font);
-        String pauseText = "PAUSED";
-        TextLayout textLayout = new TextLayout(pauseText, font, graphics.getFontRenderContext());
+        graphics.setFont(LARGE_FONT);
+        TextLayout textLayout = new TextLayout(PAUSED, LARGE_FONT, graphics.getFontRenderContext());
         double xTextOffset = textLayout.getBounds().getWidth()/2;
         double yTextOffset = textLayout.getAscent()/2;
-        graphics.drawString(pauseText, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset - 5));
+        graphics.drawString(PAUSED, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset - TEXT_INTERVAL));
 
-        font = new Font(Window.FONT_NAME, Font.PLAIN, 32);
-        graphics.setFont(font);
-        String pauseHint = "Press P to resume!";
-        textLayout = new TextLayout(pauseHint, font, graphics.getFontRenderContext());
+        graphics.setFont(MEDIUM_FONT);
+        textLayout = new TextLayout(RESUME, MEDIUM_FONT, graphics.getFontRenderContext());
         xTextOffset = textLayout.getBounds().getWidth()/2;
         yTextOffset = textLayout.getAscent()/2;
-        graphics.drawString(pauseHint, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset + 5));
-
-        graphics.setFont(baseFont);
-        graphics.setColor(Color.BLACK);
+        graphics.drawString(RESUME, (int) (window.getBufferWidth()/2 - xTextOffset), (int) (window.getBufferHeight()/2 - yTextOffset + TEXT_INTERVAL));
     }
 
     public void update() {

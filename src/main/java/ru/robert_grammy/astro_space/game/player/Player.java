@@ -38,8 +38,8 @@ public class Player implements Updatable, Renderable {
     private static final Color INVINCIBLE_SHIELD_OUTLINE_COLOR = Color.WHITE;
     private static final int DEFAULT_SHOOT_TIME = 25;
     private static final int DEFAULT_DESTROY_TIME = 35;
-    private static final int DEFAULT_TIME_TO_POWER_UP_CALL = 1500;
-    private static final int BOUND_TIME_TO_POWER_UP_CALL = 3500;
+    private static final int DEFAULT_TIME_TO_POWER_UP_CALL = 2000;
+    private static final int BOUND_TIME_TO_POWER_UP_CALL = 4000;
     private static final int Z_INDEX = 100;
     private static final int INVINCIBLE_SHIELD_SIZE = 50;
     private static final int INVINCIBLE_SHIELD_BLINK_TIME = 100;
@@ -53,11 +53,14 @@ public class Player implements Updatable, Renderable {
     private static final double INCREASE_MOVEMENT_SPEED_COEFFICIENT = .15;
     private static final double FIRE_TRAIL_POINT_OFFSET_OF_PLAYER_POSITION = 12;
     private static final double STOP_MOVEMENT_VECTOR_LENGTH = .135;
+    private static final double SHAPE_SMALLER_POWER_UP_SCALE = 0.75;
     private int destroyTimer = DEFAULT_DESTROY_TIME;
     private int timeToNextPowerUpCall = DEFAULT_TIME_TO_POWER_UP_CALL * 2;
     private int shootTimer = 0;
     private int powerUpDuration = 0;
     private boolean isDestroyed = false;
+    private final double defaultScale;
+    private final double scaleIncrementCoefficient;
     private final Stroke shapeStroke;
     private final LineShape shape;
     private final Vector position;
@@ -72,6 +75,8 @@ public class Player implements Updatable, Renderable {
         START_GAME_SOUND.play();
         GameSound.playAfter(START_GAME_SOUND, BACKGROUND_SOUND, Clip.LOOP_CONTINUOUSLY, false, 500).start();
         shapeStroke = new BasicStroke(shape.getLineWeight(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+        defaultScale = shape.getScale();
+        scaleIncrementCoefficient = ((defaultScale / SHAPE_SMALLER_POWER_UP_SCALE) / PowerType.SMALLER.getDuration());
     }
 
     @Override
@@ -117,6 +122,7 @@ public class Player implements Updatable, Renderable {
             control();
             movement();
             handlePowerUpUp();
+            powerUpProcess();
             stockCall();
         }
         afterDie();
@@ -221,14 +227,25 @@ public class Player implements Updatable, Renderable {
         });
     }
 
+    private void powerUpProcess() {
+        if (shape.getScale() < defaultScale) {
+            shape.setScale(shape.getScale() + scaleIncrementCoefficient);
+            if (shape.getScale() >= defaultScale) shape.setScale(defaultScale);
+        }
+    }
+
     private void powerUpUp(PowerUp powerUp) {
-        if (powerUp.getType() == PowerType.ADD_SCORE) {
-            Main.getGame().addScore(RND_SCORE_EARN_RANGE.randomValue() * BASE_SCORE_EARN_MULTIPLY);
-            powerUp.kill();
+        PowerType powerUpType = powerUp.getType();
+        powerUp.kill();
+        if (powerUpType == PowerType.SMALLER) {
+            shape.scale(SHAPE_SMALLER_POWER_UP_SCALE);
             return;
         }
-        powerUpType = powerUp.getType();
-        powerUp.kill();
+        if (powerUpType == PowerType.ADD_SCORE) {
+            Main.getGame().addScore(RND_SCORE_EARN_RANGE.randomValue() * BASE_SCORE_EARN_MULTIPLY);
+            return;
+        }
+        this.powerUpType = powerUpType;
         if (powerUpType == PowerType.BIG_BOOM) {
             Main.getGame().getUpdatables().stream().filter(updatable -> updatable instanceof Asteroid).map(asteroid -> (Asteroid) asteroid).forEach(Asteroid::kill);
             return;

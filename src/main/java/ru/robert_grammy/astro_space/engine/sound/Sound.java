@@ -87,7 +87,7 @@ public class Sound implements AutoCloseable {
 
     public void stopAndReset() {
         clip.stop();
-        clip.setFramePosition(0);
+        reset();
         playing = false;
     }
 

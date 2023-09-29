@@ -29,9 +29,9 @@ public class PowerUp implements Renderable {
     private static final double FADE_SPEED = .15;
     private final Vector position;
     private final PowerType type;
-    private static  Color fill;
-    private static  Color outline;
-    private static  Color symbolColor;
+    private Color fill;
+    private Color outline;
+    private Color symbolColor;
     private double alpha = .0;
 
     public PowerUp() {
@@ -95,7 +95,8 @@ public class PowerUp implements Renderable {
         DOUBLE_SCORE(100, 0x008800, "S", 1500),
         INVINCIBLE(10, 0x440088, "I", 750),
         ADD_SCORE(300, 0x008844, "+", 0),
-        FREEZER(75, 0x008888, "F", 1200);
+        FREEZER(75, 0x008888, "F", 1200),
+        SMALLER(100, 0x004488, "S", 1000);
 
         private static final int totalWeight = IntStream.of(Arrays.stream(values()).mapToInt(PowerType::getWeight).toArray()).sum();
         private final int weight;

@@ -6,7 +6,7 @@
 
     <groupId>ru.robert_grammy.astro_space</groupId>
     <artifactId>AstroSpace</artifactId>
-    <version>pre-1.0.0</version>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>

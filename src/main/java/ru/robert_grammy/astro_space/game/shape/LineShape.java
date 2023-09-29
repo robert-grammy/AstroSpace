@@ -17,6 +17,7 @@ public class LineShape {
     private final Color fillColor;
     private final Color lineColor;
     private final float lineWeight;
+    private double scale;
     private double degree;
 
     public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, List<Vector> points) {
@@ -24,7 +25,8 @@ public class LineShape {
         this.fillColor = fillColor;
         this.lineColor = lineColor;
         this.lineWeight = lineWeight;
-        this.points.addAll(points.stream().map(point -> point.multiply(scale)).toList());
+        this.scale = scale;
+        this.points.addAll(points);
     }
 
     public LineShape(double degree, Color fillColor, Color lineColor, float lineWeight, double scale, Vector... points) {
@@ -32,11 +34,16 @@ public class LineShape {
         this.fillColor = fillColor;
         this.lineColor = lineColor;
         this.lineWeight = lineWeight;
-        this.points.addAll(Arrays.stream(points).map(point -> point.multiply(scale)).toList());
+        this.scale = scale;
+        this.points.addAll(List.of(points));
     }
 
     public List<Vector> getRealPoints(Vector position) {
-        return points.stream().map(Vector::clone).map(point -> point.fromBasis(X_BASIS_VECTOR.clone().rotate(getRotation())).add(position)).toList();
+        return points.stream()
+                .map(Vector::clone)
+                .map(point -> point.multiply(scale))
+                .map(point -> point.fromBasis(X_BASIS_VECTOR.clone().rotate(getRotation())).add(position))
+                .toList();
     }
 
     public List<StraightLine> getRealLines(Vector position) {
@@ -59,6 +66,18 @@ public class LineShape {
         if (degree >= 360) degree -= 360;
         if (degree < 0) degree += 360;
         this.degree = degree;
+    }
+
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
+    public double getScale() {
+        return scale;
+    }
+
+    public void scale(double scale) {
+        this.scale *= scale;
     }
 
     public int getRotation() {

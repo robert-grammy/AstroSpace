@@ -23,7 +23,6 @@ public enum GameSound {
     PUFF(1F),
     BACKGROUND(0.85F);
 
-
     private static final String WAV_EXTENSION = ".wav";
     private static final String DIR = "assets/sound/";
 

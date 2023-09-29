@@ -153,10 +153,11 @@ public class StraightLine {
 
     @Override
     public String toString() {
-        return "StraightLine{" +
-                "a=" + a +
-                ", b=" + b +
-                ", c=" + c +
+        return "StraightLine" +
+                "{" +
+                    "a=" + a +
+                    ", b=" + b +
+                    ", c=" + c +
                 '}';
     }
 

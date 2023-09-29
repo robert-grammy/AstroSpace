@@ -14,6 +14,8 @@ import java.util.Optional;
 
 public class ParticleGenerator implements Renderable, Updatable {
 
+    public static final int BASE_STARS_COUNT = 375;
+    public static final int STARS_Z_INDEX = 0;
     private static final RandomIntegerValueRange PUFF_SIZE_RANGE = new RandomIntegerValueRange(15, 40);
     private static final RandomIntegerValueRange EXPLOSION_SIZE_RANGE = new RandomIntegerValueRange(15, 40);
     private static final RandomIntegerValueRange SMOKE_SIZE_RANGE = new RandomIntegerValueRange(30, 60);
