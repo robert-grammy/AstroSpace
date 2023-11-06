@@ -10,7 +10,6 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="AstroSpace" target="19" />
       <module name="LineSpace" target="19" />
     </bytecodeTargetLevel>
   </component>

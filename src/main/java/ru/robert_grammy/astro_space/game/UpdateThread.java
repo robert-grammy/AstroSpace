@@ -26,7 +26,7 @@ public class UpdateThread implements Runnable {
             long now = TimeManager.getCurrentTime();
             long elapsedTime = now - lastTime;
             lastTime = now;
-            delta += (elapsedTime / game.getTimeManager().getUpdateInterval());
+            delta += (float) (elapsedTime / game.getTimeManager().getUpdateInterval());
             while (delta > 1) {
                 game.update();
                 delta--;

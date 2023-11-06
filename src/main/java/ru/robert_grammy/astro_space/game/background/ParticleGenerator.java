@@ -73,7 +73,7 @@ public class ParticleGenerator implements Renderable, Updatable {
 
     @Override
     public void update() {
-        if (particles.size() == 0) Main.getGame().unregister(this);
+        if (particles.isEmpty()) Main.getGame().unregister(this);
         updateParticlesList();
         duplicate.forEach(Particle::update);
     }
